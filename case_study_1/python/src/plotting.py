@@ -1,4 +1,4 @@
-from raunak_chatgpt import *
+from generic_model import *
 
 # ---------------------------
 # PLOTTING
@@ -41,6 +41,7 @@ if __name__ == "__main__":
     ax.set_xlabel("Time")
     ax.set_ylabel("Cell density")
     ax.set_title("Posterior Predictive Fits")
+    fig.savefig('../figures/figure1')
     plt.show()
 
 
