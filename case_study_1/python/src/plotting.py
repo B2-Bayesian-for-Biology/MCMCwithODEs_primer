@@ -1,7 +1,7 @@
 from generic_model import *
 
 # ---------------------------
-# PLOTTING
+# PLOTTING FUNCTIONS
 # ---------------------------
 
 # Plot the original data
@@ -26,18 +26,13 @@ def plot_posterior_predictive(ax, trace, time, obs, num_samples=200, ode_solver=
 # MAIN EXECUTION
 # ---------------------------
 
-# This block only runs if the script is executed directly (not when imported)
-if __name__ == "__main__":
-    # Load data
-    data = pd.read_csv("./../data/phaeocystis_control.csv")
-    time = data['times'].values
-    obs = data['cells'].values
+# Load data
+data = pd.read_csv("./../data/phaeocystis_control.csv")
+time = data['times'].values
+obs = data['cells'].values
+trace = az.from_netcdf('../data/posterior_trace.nc')
 
-    trace = az.from_netcdf('../data/posterior_trace.nc')
-
-# Simulated PyMC trace data (replace with your actual inference result)
-idata = az.load_arviz_data("non_centered_eight")
-
+# create figure
 fig = plt.figure(figsize=(12, 15))
 outer_gs = fig.add_gridspec(3, 1, height_ratios=[4, 3,3])  # Top 1/2 and bottom 1/2
 
@@ -60,6 +55,7 @@ mum = trace.posterior["mum"].values.flatten()
 N0 = trace.posterior["N0"].values.flatten()
 ax_walks.scatter(mum, N0, s=1, alpha=0.5)
 
+# trace plots and KDE plots
 az.plot_trace(trace, var_names=["mum"], axes=np.r_[[[ax_hist1],[ax_trace1]]].T, compact=True, show=False)
 az.plot_posterior(trace, var_names=["mum"], ax=ax_hist1, show=False)
 az.plot_trace(trace, var_names=["N0"], axes=np.r_[[[ax_hist2],[ax_trace2]]].T, compact=True, show=False)
