@@ -1,4 +1,4 @@
-from generic_model import *
+from malthusian import *
 
 # ---------------------------
 # PLOTTING FUNCTIONS
