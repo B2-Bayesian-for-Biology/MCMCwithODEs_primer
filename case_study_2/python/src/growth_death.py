@@ -156,43 +156,6 @@ autocorr = az.plot_autocorr(trace)
 print(f'Rhat:\n{rhat}\n')
 plt.show()
 
-'''
-# Plot forward model using posterior
-posterior_samples = trace[vars_list]
-num_samples = posterior_samples.shape[0]
-
-plt.figure(figsize=(12, 6))
-
-for i in range(num_samples):
-    sample = posterior_samples[i]
-    live_solution, dead_solution = pytensor_forward_model_matrix_vary_init(sample)
-    
-    plt.subplot(1, 2, 1)
-    plt.plot(data['times'], np.exp(live_solution[:, 0]), '-', color='gray', alpha=0.1)
-    
-    plt.subplot(1, 2, 2)
-    plt.plot(death_data['time (hours)'], np.exp(dead_solution[:, 1]), '-', color='gray', alpha=0.1)
-
-plt.subplot(1, 2, 1)
-plt.plot(data['times'], data['cells'], 'o', color='orange')
-plt.xlabel('Time (hrs)')
-plt.ylabel(data.columns[1])
-plt.yscale('log')
-plt.ylim(1e5, 1e7)
-plt.xlim(0, 20)
-
-plt.subplot(1, 2, 2)
-plt.plot(death_data['time (hours)'], death_data['rep1'], 'o', color='orange')
-plt.plot(death_data['time (hours)'], death_data['rep2'], 'o', color='blue')
-plt.plot(death_data['time (hours)'], death_data['rep3'], 'o', color='green')
-plt.xlabel(death_data.columns[0])
-plt.ylabel('Cells')
-plt.yscale('log')
-plt.ylim(1e5, 1e7)
-plt.xlim(0, 20)
-
-plt.show()
-'''
 
 # Get posterior samples as a NumPy array
 posterior_samples = trace.posterior.stack(draws=("chain", "draw"))
