@@ -19,36 +19,32 @@ import logging
 
 death_whole = pd.read_csv("./../data/ehux379_sytox.csv")
 data = death_whole.head(10)
-death_data = death_whole.tail(10)
 
 
 
-# Correct: use .iloc[0] to access by position
-print(death_data['rep1'].iloc[0])
+
 
 # Initial conditions with correct indexing
 y0_guess = [
-    (data['rep1'].iloc[0] + data['rep2'].iloc[0] + data['rep3'].iloc[0]) / 3,
-    (death_data['rep1'].iloc[0] + death_data['rep2'].iloc[0] + death_data['rep3'].iloc[0]) / 3
+    (data['rep1'].iloc[0] + data['rep2'].iloc[0] + data['rep3'].iloc[0]) / 3
 ]
 
 
 ## differential equation and solvers
 
-def cells_growth_death(y,t,r,K,delta):
-    P, D = y
-    dydt = [0,0]
-    dydt[0] = r*(1-P/K)*P - delta*P
-    dydt[1] = delta*P
+def cells_growth(y,t,r,K):
+    P = y
+    
+    dydt = r*(1-P/K)*P 
+   
     return dydt
 
-def solved_num_cells(y0,t,r,K,delta):
-    sol = odeint(cells_growth_death, y0, t, args=(r,K,delta))
+def solved_num_cells(y0,t,r,K):
+    sol = odeint(cells_growth, y0, t, args=(r,K))
     return sol
 
 r_guess = 0.5
 K_guess = 5e6
-delta_guess = 0.1
 
 
 avg_data = data[['rep1', 'rep2', 'rep3']].mean(axis=1)
@@ -58,10 +54,10 @@ print(np.log(avg_data))
 t = np.linspace(0, 20, 100)
 
 # guess solution
-solution = solved_num_cells(y0_guess,t, r_guess, K_guess, delta_guess)
+solution = solved_num_cells(y0_guess,t, r_guess, K_guess)
 
 
-plt.subplot(1, 2, 1)
+
 plt.plot(data['time (hours)'],data['rep1'],'o',color ='orange')
 plt.plot(data['time (hours)'],data['rep2'],'o',color ='blue')
 plt.plot(data['time (hours)'],data['rep3'],'o',color ='green')
@@ -71,19 +67,9 @@ plt.ylabel(data.columns[1])
 plt.yscale('log')
 plt.ylim(1e5, 1e7)
 plt.xlim(0, 20)
-
-
-plt.subplot(1, 2, 2)
-plt.plot(death_data['time (hours)'],death_data['rep1'],'o',color ='orange')
-plt.plot(death_data['time (hours)'],death_data['rep2'],'o',color ='blue')
-plt.plot(death_data['time (hours)'],death_data['rep3'],'o',color ='green')
-plt.plot(t,solution[:,1],'-',color ='k')
-plt.xlabel(death_data.columns[0])
-plt.ylabel('Cells')
-plt.yscale('log')
-plt.ylim(1e5, 1e7)
-plt.xlim(0, 20)
 plt.show()
+
+
 
 
 
@@ -93,24 +79,24 @@ plt.show()
 # ---------------------------
 
 @njit
-def cells_growth_death(y,t,theta):
-    P, D = y
+def cells_growth(y,t,theta):
+    P= y
     # unpack parameters
-    r,K,delta = theta 
-    dydt = [0,0]
-    dydt[0] = r*(1-P/K)*P - delta*D
-    dydt[1] = delta*D
+    r,K= theta 
+   
+    dydt = r*(1-P/K)*P 
+   
     return dydt
 
 
 
-@as_op(itypes=[pt.dvector], otypes=[pt.dmatrix, pt.dmatrix])
+@as_op(itypes=[pt.dvector], otypes=[pt.dmatrix])
 def pytensor_forward_model_matrix_vary_init(theta):
-    y0 = [theta[-2], theta[-1]]
+    y0 = [ theta[-1]]
     # Simulate ODE for each time series separately
-    result_1 = odeint(cells_growth_death, y0, t=data['time (hours)'].values, args=(theta[:-2],), rtol=1e-6, atol=1e-6)
-    result_2 = odeint(cells_growth_death, y0, t=death_data['time (hours)'].values, args=(theta[:-2],), rtol=1e-6, atol=1e-6)
-    return result_1, result_2
+    result = odeint(cells_growth, y0, t=data['time (hours)'].values, args=(theta[:-1],), rtol=1e-6, atol=1e-6)
+   
+    return result
 
 
 
@@ -120,16 +106,16 @@ import pytensor.tensor as pt
 with pm.Model() as model:
     # Priors
     r = pm.Uniform(r"$r$ (growth rate)", lower=0.2, upper=0.7)
-    K = pm.Uniform(r"$K$ (carrying capacity)" , lower=5e6, upper=2e7)
-    delta = pm.Uniform(r"$\delta$ (death rate)", lower=0.05, upper=0.3)
+    K = pm.Uniform(r"$K$ (carrying capacity)" , lower=1e6, upper=2e7)
+    
     P0 = pm.Uniform(r"$P_0$ (init. live)", lower=4.5e5, upper=9e5)
-    D0 = pm.Uniform(r"$D_0$ (init. dead)", lower=1e5, upper=3e5)
+    
 
-    sigma_live = pm.HalfNormal(r"$\sigma_L$", 3)
-    sigma_dead = pm.HalfNormal(r"$\sigma_D$", 3)
+    sigma_ll = pm.HalfNormal(r"$\sigma_L$", 3)
+    
 
-    theta = pm.math.stack([r, K, delta, P0, D0])
-    live_solution, dead_solution = pytensor_forward_model_matrix_vary_init(theta)
+    theta = pm.math.stack([r, K, P0])
+    live_solution = pytensor_forward_model_matrix_vary_init(theta)
 
     # Likelihoods
     avg_data = data[['rep1', 'rep2', 'rep3']].mean(axis=1)
@@ -138,14 +124,11 @@ with pm.Model() as model:
 
     #pm.Normal("Y_live", mu=pm.math.log(live_solution[:, 0]), sigma=sigma_live,
     #          observed=np.log(avg_data.values))
-    pm.Normal("Y_live", mu=pm.math.log(pm.math.clip(live_solution[:, 0], 1e-8, np.inf)),sigma=sigma_live,
+    pm.Normal("Y_live", mu=pm.math.log(pm.math.clip(live_solution[:, 0], 1e-8, np.inf)),sigma=sigma_ll,
               observed=np.log(avg_data.values))
     
-    avg_dead = death_data[['rep1', 'rep2', 'rep3']].mean(axis=1)
-    #pm.Normal("Y_dead", mu=pm.math.log(dead_solution[:, 1]), sigma=sigma_dead,
-    #          observed=np.log(avg_dead.values))
-    pm.Normal("Y_dead", mu=pm.math.log(pm.math.clip(live_solution[:, 1], 1e-8, np.inf)),sigma=sigma_dead,
-              observed=np.log(avg_dead.values))
+   
+    
     
     
 #model.debug()
@@ -202,9 +185,7 @@ posterior_samples = trace.posterior.stack(draws=("chain", "draw"))
 posterior_array = np.vstack([
     posterior_samples["$r$ (growth rate)"].values,
     posterior_samples["$K$ (carrying capacity)"].values,
-    posterior_samples["$\delta$ (death rate)"].values,
     posterior_samples["$P_0$ (init. live)"].values,
-    posterior_samples["$D_0$ (init. dead)"].values
 ]).T  # Shape: (n_samples, 5)
 
 n_plot = 200  # Number of samples to simulate for plotting
@@ -214,18 +195,16 @@ plt.figure(figsize=(12, 6))
 for i in range(n_plot):
     theta = posterior_array[i]
     # last two are initial conditions
-    y0 = [theta[-2], theta[-1]]
-    sol_live = odeint(cells_growth_death, y0, t=data['time (hours)'].values, args=(theta[:-2],), rtol=1e-6, atol=1e-6)
-    sol_dead = odeint(cells_growth_death, y0, t=death_data['time (hours)'].values, args=(theta[:-2],), rtol=1e-6, atol=1e-6)
+    y0 = [ theta[-1]]
+    sol = odeint(cells_growth, y0, t=data['time (hours)'].values, args=(theta[:-1],), rtol=1e-6, atol=1e-6)
 
-    plt.subplot(1, 2, 1)
-    plt.plot(data['time (hours)'], sol_live[:, 0], '-', color='gray', alpha=0.1)
 
-    plt.subplot(1, 2, 2)
-    plt.plot(death_data['time (hours)'], sol_dead[:, 1], '-', color='gray', alpha=0.1)
+    plt.plot(data['time (hours)'], sol[:, 0], '-', color='gray', alpha=0.1)
+
+
 
 # Add data points on top
-plt.subplot(1, 2, 1)
+
 plt.plot(data['time (hours)'], data['rep1'], 'o', color='orange')
 plt.plot(data['time (hours)'], data['rep2'], 'o', color='blue')
 plt.plot(data['time (hours)'], data['rep3'], 'o', color='green')
@@ -235,20 +214,10 @@ plt.yscale('log')
 plt.ylim(1e5, 1e7)
 plt.xlim(0, 20)
 
-plt.subplot(1, 2, 2)
-plt.plot(death_data['time (hours)'], death_data['rep1'], 'o', color='orange')
-plt.plot(death_data['time (hours)'], death_data['rep2'], 'o', color='blue')
-plt.plot(death_data['time (hours)'], death_data['rep3'], 'o', color='green')
-#plt.xlabel(death_data.columns[0])
-plt.xlabel('Time (hrs)')
-plt.ylabel('Dead cells')
-plt.yscale('log')
-plt.ylim(1e5, 1e7)
-plt.xlim(0, 20)
 
-plt.tight_layout()
+
 plt.show()
 
 # Save chain to a CSV file
 df_trace = az.convert_to_inference_data(obj=trace).to_dataframe(include_coords=False,groups='posterior')
-df_trace.to_csv('./../res/chain_results.csv', index=False)
+df_trace.to_csv('./../res/growth_only.csv', index=False)
