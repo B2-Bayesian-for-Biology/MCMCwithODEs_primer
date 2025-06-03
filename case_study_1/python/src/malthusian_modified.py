@@ -7,51 +7,21 @@ import arviz as az
 from pytensor.compile.ops import as_op
 import pytensor.tensor as pt
 
-# ---------------------------
-# MODELING
-# ---------------------------
-
-# Define the differential equation for exponential cell growth
-def cells_ode(y, t, mum):
-    return mum * y
-
-# Solve the ODE numerically given initial conditions, time, and parameter
-def solve_cells_ode(y0, t, mum):
-    return odeint(cells_ode, y0, t, args=(mum,)).flatten()
-
-# Define a PyMC-compatible wrapper for ODE solving
-@as_op(itypes=[pt.dscalar, pt.dscalar], otypes=[pt.dvector])
-def pymc_cells_model(mum, N0):
-    return solve_cells_ode(N0, pymc_cells_model.time_data, mum)
-
-# ---------------------------
-# INFERENCE
-# ---------------------------
-
-data = pd.read_csv("./../data/phaeocystis_control.csv")
-time = data['times'].values
-
-# Build and return a PyMC model
-# Modified model using DifferentialEquation\ndef build_pymc_model(time, obs):
-pymc_cells_model.time_data = time  # set global state for @as_op function
-
-    
 # Define the differential equation system
 def cells_ode(y, t, params):
     mum = params[0]
     return [mum * y[0]]
 
-cell_model = pm.ode.DifferentialEquation(
-    func=cells_ode,
-    times=data['times'].values,
-    n_states=1,
-    n_theta=1,
-    t0=0
-)
-
 # Build and return a PyMC model
 def build_pymc_model(time, obs):
-    pymc_cells_model.time_data = time  # set global state for @as_op function
+
+    cell_model = pm.ode.DifferentialEquation(
+        func=cells_ode,
+        times=data['times'].values,
+        n_states=1,
+        n_theta=1,
+        t0=0
+    )
 
     with pm.Model() as model:
         # Priors
@@ -66,7 +36,7 @@ def build_pymc_model(time, obs):
 
 
 # Run inference and return the trace (InferenceData)
-def run_inference(model, draws=1000, tune=1000, chains=2):
+def run_inference(model, draws=1000, tune=1000, chains=4):
     with model:
         trace = pm.sample(draws=draws, tune=tune, chains=chains, return_inferencedata=True)
     return trace
@@ -78,6 +48,7 @@ def run_inference(model, draws=1000, tune=1000, chains=2):
 # This block only runs if the script is executed directly (not when imported)
 if __name__ == "__main__":
     # Load data
+    data = pd.read_csv("./../data/phaeocystis_control.csv")
     time = data['times'].values
     obs = data['cells'].values
 
