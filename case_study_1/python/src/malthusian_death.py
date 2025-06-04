@@ -35,7 +35,7 @@ def build_pymc_model(time, obs):
 
 
 # Run inference and return the trace (InferenceData)
-def run_inference(model, draws=1000, tune=1000, chains=4):
+def run_inference(model, draws=2000, tune=2000, chains=4):
     with model:
         trace = pm.sample(draws=draws, tune=tune, chains=chains, return_inferencedata=True)
     return trace

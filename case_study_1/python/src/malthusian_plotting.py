@@ -3,8 +3,8 @@ from malthusian import *
 import matplotlib.pyplot as plt
 import arviz as az
 
+# load trace
 growth_trace = az.from_netcdf('../data/posterior_trace.nc')
-death_trace = az.from_netcdf('../data/death_posterior_trace.nc')
 
 ############################################
 # trace plots
@@ -21,26 +21,13 @@ for ax_row in axes:
 plt.tight_layout()
 plt.savefig('../figures/growth_chains')
 
-# plot chains - DEAD
-axes = az.plot_trace(death_trace)
-chain_colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red']
-for ax_row in axes:
-    for ax in ax_row:
-        lines = ax.get_lines()
-        for i, line in enumerate(lines):
-            line.set_color(chain_colors[i % len(chain_colors)])
-plt.tight_layout()
-plt.savefig('../figures/death_chains')
-
 ############################################
 # posteriors
 ############################################
 
 # Plot posterior correlations
 az.plot_pair(growth_trace, kind='kde', divergences=True, marginals=True)
-az.plot_pair(death_trace, kind='kde', divergences=True, marginals=True)
 plt.savefig('../figures/growth_posterior')
-plt.savefig('../figures/death_posterior')
 
 ############################################
 # autocorrelation
@@ -51,7 +38,6 @@ rhat = az.rhat(growth_trace)
 autocorr = az.plot_autocorr(growth_trace)
 print(f'Rhat:\n{rhat}\n')
 plt.savefig('../figures/growth_autocorrelation')
-plt.savefig('../figures/death_autocorrelation')
 
 ############################################
 # dynamics
