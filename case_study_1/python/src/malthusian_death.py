@@ -1,9 +1,7 @@
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 from scipy.integrate import odeint
 import pymc as pm
-import arviz as az
 from pytensor.compile.ops import as_op
 import pytensor.tensor as pt
 
