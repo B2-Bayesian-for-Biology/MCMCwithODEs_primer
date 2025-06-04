@@ -5,30 +5,21 @@ import pymc as pm
 from pytensor.compile.ops import as_op
 import pytensor.tensor as pt
 
-# ---------------------------
-# MODELING
-# ---------------------------
-
-# Define the differential equation for exponential cell growth
-def cells_ode(y, t, mum, delta):
-    return (mum - delta) * y
-
-# Solve the ODE numerically given initial conditions, time, and parameter
-def solve_cells_ode(y0, t, mum, delta):
-    return odeint(cells_ode, y0, t, args=(mum,delta,)).flatten()
-
-# Define a PyMC-compatible wrapper for ODE solving
-@as_op(itypes=[pt.dscalar, pt.dscalar, pt.dscalar], otypes=[pt.dvector])
-def pymc_cells_model(mum,delta,N0):
-    return solve_cells_ode(N0, pymc_cells_model.time_data, mum, delta)
-
-# ---------------------------
-# INFERENCE
-# ---------------------------
+# Define the differential equation system
+def cells_ode(y, t, params):
+    mum,delta = params[0],params[1]
+    return [(mum-delta) * y[0]]
 
 # Build and return a PyMC model
 def build_pymc_model(time, obs):
-    pymc_cells_model.time_data = time  # set global state for @as_op function
+
+    cell_model = pm.ode.DifferentialEquation(
+        func=cells_ode,
+        times=data['times'].values,
+        n_states=1,
+        n_theta=2,
+        t0=0
+    )
 
     with pm.Model() as model:
         # Priors
@@ -37,13 +28,14 @@ def build_pymc_model(time, obs):
         N0 = pm.Lognormal('N0', mu=np.log(obs[0]), sigma=0.1)
         sigma = pm.HalfNormal("sigma", 1)
 
-        y_hat = pymc_cells_model(mum,delta,N0)
-        pm.Normal("Y_obs", mu=np.log(y_hat), sigma=sigma, observed=np.log(obs))
+        y_hat = cell_model(y0=[N0], theta=[mum,delta])
+        pm.Normal("Y_obs", mu=pm.math.log(y_hat[:, 0]), sigma=sigma, observed=np.log(obs))
 
     return model
 
+
 # Run inference and return the trace (InferenceData)
-def run_inference(model, draws=1000, tune=1000, chains=2):
+def run_inference(model, draws=1000, tune=1000, chains=4):
     with model:
         trace = pm.sample(draws=draws, tune=tune, chains=chains, return_inferencedata=True)
     return trace
