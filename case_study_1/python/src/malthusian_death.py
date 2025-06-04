@@ -4,6 +4,7 @@ from scipy.integrate import odeint
 import pymc as pm
 from pytensor.compile.ops import as_op
 import pytensor.tensor as pt
+import arviz as az
 
 # Define the differential equation system
 def cells_ode(y, t, params):

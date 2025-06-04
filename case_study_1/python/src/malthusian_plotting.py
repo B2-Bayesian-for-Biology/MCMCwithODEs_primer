@@ -1,4 +1,3 @@
-from malthusian_death import *
 from malthusian import *
 import matplotlib.pyplot as plt
 import arviz as az

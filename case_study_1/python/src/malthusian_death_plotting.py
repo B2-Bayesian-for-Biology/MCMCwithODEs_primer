@@ -1,7 +1,5 @@
 from malthusian_death import *
-from malthusian import *
 import matplotlib.pyplot as plt
-import arviz as az
 
 death_trace = az.from_netcdf('../data/death_posterior_trace.nc')
 
