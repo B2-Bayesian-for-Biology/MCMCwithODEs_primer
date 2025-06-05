@@ -44,19 +44,19 @@ plt.savefig('../figures/growth_autocorrelation')
 
 # Plot the original data
 def plot_data(ax, time, obs, **kwargs):
-    ax.plot(time, obs, 'ko', label='data', **kwargs)
+    ax.plot(time, obs, 'ko', label=r'$Phaeocystis$ $globosa$',zorder=1, **kwargs)
 
 # Plot a single model realization
 def plot_model(ax, model_output, time, **kwargs):
     ax.plot(time, model_output, **kwargs)
 
 # Overlay posterior predictive simulations
-def plot_posterior_predictive(ax, trace, time, obs, num_samples=200, ode_solver=cells_ode, **kwargs):
+def plot_posterior_predictive(ax, trace, time, obs, num_samples=400, ode_solver=cells_ode, **kwargs):
     df = az.extract(trace, num_samples=num_samples).to_dataframe()
     plot_data(ax, time, obs, lw=0)
     for _, row in df.iterrows():
         model_output = odeint(ode_solver,[row["N0"]], time, args=([row["mum"]],))
-        plot_model(ax, model_output, time, lw=1, alpha=0.1, c='b', **kwargs)
+        plot_model(ax, model_output, time, lw=1, alpha=0.1, c='r',zorder=0, **kwargs)
     ax.legend()
     ax.semilogy()
 
