@@ -24,8 +24,8 @@ def build_pymc_model(time, obs):
 
     with pm.Model() as model:
         # Priors
-        mum = pm.Normal('mum', mu=0.5, sigma=0.3)
-        delta = pm.Normal('delta', mu=0.5, sigma=0.3)
+        mum = pm.TruncatedNormal('mum', mu=0.5, sigma=0.3,lower = 0.1, upper=1.0)
+        delta = pm.TruncatedNormal('delta', mu=0.5, sigma=0.3, lower=0.1, upper=1.0)
         N0 = pm.Lognormal('N0', mu=np.log(obs[0]), sigma=0.1)
         sigma = pm.HalfNormal("sigma", 1)
 
@@ -57,5 +57,5 @@ if __name__ == "__main__":
     trace = run_inference(model)
 
     # save trace plots to csv
-    az.to_netcdf(trace, '../data/death_posterior_trace.nc')
+    az.to_netcdf(trace, '../data/death_posterior_trace_constrained.nc')
 
