@@ -1,5 +1,5 @@
-import malthusian_plotting as gp
-import malthusian_death_plotting as dp
+import malthusian_normal_plotting as gp
+import death_normal_plotting as dp
 import matplotlib.pyplot as plt
 import arviz as az
 
