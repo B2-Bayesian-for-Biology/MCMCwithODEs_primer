@@ -1,7 +1,7 @@
 from malthusian_death import *
 import matplotlib.pyplot as plt
 
-death_trace = az.from_netcdf('../data/death_posterior_trace.nc')
+death_trace = az.from_netcdf('../../data/death_posterior_trace.nc')
 
 ############################################
 # trace plots
@@ -16,7 +16,7 @@ for ax_row in axes:
         for i, line in enumerate(lines):
             line.set_color(chain_colors[i % len(chain_colors)])
 plt.tight_layout()
-plt.savefig('../figures/death_chains')
+plt.savefig('../../figures/death_chains')
 
 ############################################
 # posteriors
@@ -24,7 +24,7 @@ plt.savefig('../figures/death_chains')
 
 # Plot posterior correlations
 az.plot_pair(death_trace, kind='kde', divergences=True, marginals=True)
-plt.savefig('../figures/death_posterior')
+plt.savefig('../../figures/death_posterior')
 
 ############################################
 # autocorrelation
@@ -34,7 +34,7 @@ plt.savefig('../figures/death_posterior')
 rhat = az.rhat(death_trace)
 autocorr = az.plot_autocorr(death_trace)
 print(f'Rhat:\n{rhat}\n')
-plt.savefig('../figures/death_autocorrelation')
+plt.savefig('../../figures/death_autocorrelation')
 
 ############################################
 # dynamics
@@ -59,11 +59,11 @@ def plot_posterior_predictive(ax, trace, time, obs, num_samples=400, ode_solver=
     ax.semilogy()
 
 f,ax = plt.subplots()
-data = pd.read_csv("./../data/phaeocystis_control.csv")
+data = pd.read_csv("./../../data/phaeocystis_control.csv")
 time = data['times'].values
 obs = data['cells'].values
 plot_posterior_predictive(ax, death_trace, time, obs)
 
-f.savefig('../figures/death_dynamics')
+f.savefig('../../figures/death_dynamics')
 
 

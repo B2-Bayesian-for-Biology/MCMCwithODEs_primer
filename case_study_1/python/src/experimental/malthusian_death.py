@@ -48,7 +48,7 @@ def run_inference(model, draws=2000, tune=2000, chains=4):
 # This block only runs if the script is executed directly (not when imported)
 if __name__ == "__main__":
     # Load data
-    data = pd.read_csv("./../data/phaeocystis_control.csv")
+    data = pd.read_csv("./../../data/phaeocystis_control.csv")
     time = data['times'].values
     obs = data['cells'].values
 
@@ -57,5 +57,5 @@ if __name__ == "__main__":
     trace = run_inference(model)
 
     # save trace plots to csv
-    az.to_netcdf(trace, '../data/death_posterior_trace.nc')
+    az.to_netcdf(trace, '../../data/death_posterior_trace.nc')
 

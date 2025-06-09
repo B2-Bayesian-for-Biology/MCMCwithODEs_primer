@@ -1,4 +1,4 @@
-from malthusian_death import *
+from malthusian_death_constrained import *
 import matplotlib.pyplot as plt
 
 death_trace = az.from_netcdf('../data/death_posterior_trace_constrained.nc')
