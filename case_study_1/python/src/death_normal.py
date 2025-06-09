@@ -57,5 +57,5 @@ if __name__ == "__main__":
     trace = run_inference(model)
 
     # save trace plots to csv
-    az.to_netcdf(trace, '../data/death_posterior_trace_constrained.nc')
+    az.to_netcdf(trace, '../data/normal_death_trace.nc')
 

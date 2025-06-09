@@ -1,16 +1,14 @@
-from malthusian import *
+from death_uniform import *
 import matplotlib.pyplot as plt
-import arviz as az
 
-# load trace
-growth_trace = az.from_netcdf('../data/posterior_trace.nc')
+death_trace = az.from_netcdf('../data/uniform_death_trace.nc')
 
 ############################################
 # trace plots
 ############################################
 
-# plot chains - GROWTH
-axes = az.plot_trace(growth_trace)
+# plot chains - DEAD
+axes = az.plot_trace(death_trace)
 chain_colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red']
 for ax_row in axes:
     for ax in ax_row:
@@ -18,25 +16,25 @@ for ax_row in axes:
         for i, line in enumerate(lines):
             line.set_color(chain_colors[i % len(chain_colors)])
 plt.tight_layout()
-plt.savefig('../figures/growth_chains')
+plt.savefig('../figures/uniform_death_chains')
 
 ############################################
 # posteriors
 ############################################
 
 # Plot posterior correlations
-az.plot_pair(growth_trace, kind='kde', divergences=True, marginals=True)
-plt.savefig('../figures/growth_posterior')
+az.plot_pair(death_trace, kind='kde', divergences=True, marginals=True)
+plt.savefig('../figures/uniform_death_posterior')
 
 ############################################
 # autocorrelation
 ############################################
 
 # 7 Convergence test for the chains - Gelman-Rubin, Geweke, and Autocorrelation
-rhat = az.rhat(growth_trace)
-autocorr = az.plot_autocorr(growth_trace)
+rhat = az.rhat(death_trace)
+autocorr = az.plot_autocorr(death_trace)
 print(f'Rhat:\n{rhat}\n')
-plt.savefig('../figures/growth_autocorrelation')
+plt.savefig('../figures/uniform_death_autocorrelation')
 
 ############################################
 # dynamics
@@ -55,8 +53,8 @@ def plot_posterior_predictive(ax, trace, time, obs, num_samples=400, ode_solver=
     df = az.extract(trace, num_samples=num_samples).to_dataframe()
     plot_data(ax, time, obs, lw=0)
     for _, row in df.iterrows():
-        model_output = odeint(ode_solver,[row["N0"]], time, args=([row["mum"]],))
-        plot_model(ax, model_output, time, lw=1, alpha=0.1, c='r',zorder=0, **kwargs)
+        model_output = odeint(ode_solver,[row["N0"]], time, args=([row["mum"],row["delta"]],))
+        plot_model(ax, model_output, time, lw=1, alpha=0.1, c='g',zorder=0, **kwargs)
     ax.legend()
     ax.semilogy()
 
@@ -64,8 +62,8 @@ f,ax = plt.subplots()
 data = pd.read_csv("./../data/phaeocystis_control.csv")
 time = data['times'].values
 obs = data['cells'].values
-plot_posterior_predictive(ax, growth_trace, time, obs)
+plot_posterior_predictive(ax, death_trace, time, obs)
 
-f.savefig('../figures/growth_dynamics')
+f.savefig('../figures/uniform_death_dynamics')
 
 

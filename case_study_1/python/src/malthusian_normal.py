@@ -25,7 +25,7 @@ def build_pymc_model(time, obs):
 
     with pm.Model() as model:
         # Priors
-        mum = pm.Uniform('mum', lower = 0.1, upper = 1)
+        mum = pm.Normal('mum', mu=0.5, sigma=0.3)
         N0 = pm.Lognormal('N0', mu=np.log(obs[0]), sigma=0.1)
         sigma = pm.HalfNormal("sigma", 1)
 
@@ -57,5 +57,5 @@ if __name__ == "__main__":
     trace = run_inference(model)
 
     # save trace plots to csv
-    az.to_netcdf(trace, '../data/uniform_growth.nc')
+    az.to_netcdf(trace, '../data/normal_growth_trace.nc')
 

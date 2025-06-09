@@ -1,16 +1,15 @@
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 from scipy.integrate import odeint
 import pymc as pm
-import arviz as az
 from pytensor.compile.ops import as_op
 import pytensor.tensor as pt
+import arviz as az
 
 # Define the differential equation system
 def cells_ode(y, t, params):
-    mum = params[0]
-    return [mum * y[0]]
+    mum,delta = params[0],params[1]
+    return [(mum-delta) * y[0]]
 
 # Build and return a PyMC model
 def build_pymc_model(time, obs):
@@ -19,17 +18,18 @@ def build_pymc_model(time, obs):
         func=cells_ode,
         times=data['times'].values,
         n_states=1,
-        n_theta=1,
+        n_theta=2,
         t0=0
     )
 
     with pm.Model() as model:
         # Priors
-        mum = pm.Normal('mum', mu=0.5, sigma=0.3)
+        mum = pm.Uniform('mum', lower = 0.1, upper = 2)
+        delta = pm.Uniform('delta', lower = 0.1, upper = 1.5)
         N0 = pm.Lognormal('N0', mu=np.log(obs[0]), sigma=0.1)
         sigma = pm.HalfNormal("sigma", 1)
 
-        y_hat = cell_model(y0=[N0], theta=[mum])
+        y_hat = cell_model(y0=[N0], theta=[mum,delta])
         pm.Normal("Y_obs", mu=pm.math.log(y_hat[:, 0]), sigma=sigma, observed=np.log(obs))
 
     return model
@@ -38,7 +38,7 @@ def build_pymc_model(time, obs):
 # Run inference and return the trace (InferenceData)
 def run_inference(model, draws=1000, tune=1000, chains=4):
     with model:
-        trace = pm.sample(draws=draws, tune=tune, chains=chains, return_inferencedata=True)
+        trace = pm.sample(draws=draws, tune=tune, chains=chains, return_inferencedata=True, target_accept=0.95)
     return trace
 
 # ---------------------------
@@ -57,5 +57,5 @@ if __name__ == "__main__":
     trace = run_inference(model)
 
     # save trace plots to csv
-    az.to_netcdf(trace, '../data/posterior_trace.nc')
+    az.to_netcdf(trace, '../data/uniform_death_trace.nc')
 

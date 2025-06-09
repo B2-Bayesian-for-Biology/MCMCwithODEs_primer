@@ -1,9 +1,9 @@
-from malthusian_uniform import *
+from malthusian_normal import *
 import matplotlib.pyplot as plt
 import arviz as az
 
 # load trace
-growth_trace = az.from_netcdf('../data/uniform_growth.nc')
+growth_trace = az.from_netcdf('../data/normal_growth_trace.nc')
 
 ############################################
 # trace plots
@@ -18,7 +18,7 @@ for ax_row in axes:
         for i, line in enumerate(lines):
             line.set_color(chain_colors[i % len(chain_colors)])
 plt.tight_layout()
-plt.savefig('../figures/uniform_growth_chains')
+plt.savefig('../figures/normal_growth_chains')
 
 ############################################
 # posteriors
@@ -26,7 +26,7 @@ plt.savefig('../figures/uniform_growth_chains')
 
 # Plot posterior correlations
 az.plot_pair(growth_trace, kind='kde', divergences=True, marginals=True)
-plt.savefig('../figures/uniform_growth_posterior')
+plt.savefig('../figures/normal_growth_posterior')
 
 ############################################
 # autocorrelation
@@ -36,7 +36,7 @@ plt.savefig('../figures/uniform_growth_posterior')
 rhat = az.rhat(growth_trace)
 autocorr = az.plot_autocorr(growth_trace)
 print(f'Rhat:\n{rhat}\n')
-plt.savefig('../figures/uniform_growth_autocorrelation')
+plt.savefig('../figures/normal_growth_autocorrelation')
 
 ############################################
 # dynamics
@@ -66,6 +66,6 @@ time = data['times'].values
 obs = data['cells'].values
 plot_posterior_predictive(ax, growth_trace, time, obs)
 
-f.savefig('../figures/uniform_growth_dynamics')
+f.savefig('../figures/normal_growth_dynamics')
 
 

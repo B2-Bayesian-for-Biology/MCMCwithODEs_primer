@@ -1,7 +1,7 @@
-from malthusian_death_constrained import *
+from death_normal import *
 import matplotlib.pyplot as plt
 
-death_trace = az.from_netcdf('../data/death_posterior_trace_constrained.nc')
+death_trace = az.from_netcdf('../data/normal_death_trace.nc')
 
 ############################################
 # trace plots
@@ -16,7 +16,7 @@ for ax_row in axes:
         for i, line in enumerate(lines):
             line.set_color(chain_colors[i % len(chain_colors)])
 plt.tight_layout()
-plt.savefig('../figures/death_chains_constrained')
+plt.savefig('../figures/normal_death_chains')
 
 ############################################
 # posteriors
@@ -24,7 +24,7 @@ plt.savefig('../figures/death_chains_constrained')
 
 # Plot posterior correlations
 az.plot_pair(death_trace, kind='kde', divergences=True, marginals=True)
-plt.savefig('../figures/death_posterior_constrained')
+plt.savefig('../figures/normal_death_posterior')
 
 ############################################
 # autocorrelation
@@ -34,7 +34,7 @@ plt.savefig('../figures/death_posterior_constrained')
 rhat = az.rhat(death_trace)
 autocorr = az.plot_autocorr(death_trace)
 print(f'Rhat:\n{rhat}\n')
-plt.savefig('../figures/death_autocorrelation_constrained')
+plt.savefig('../figures/normal_death_autocorrelation')
 
 ############################################
 # dynamics
@@ -64,6 +64,6 @@ time = data['times'].values
 obs = data['cells'].values
 plot_posterior_predictive(ax, death_trace, time, obs)
 
-f.savefig('../figures/death_dynamics_constrained')
+f.savefig('../figures/normal_death_dynamics')
 
 
