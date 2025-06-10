@@ -56,7 +56,7 @@ def plot_posterior_predictive(ax, trace, time, obs, num_samples=400, ode_solver=
     plot_data(ax, time, obs, lw=0)
     for _, row in df.iterrows():
         model_output = odeint(ode_solver,[row["N0"]], time, args=([row["mum"]],))
-        plot_model(ax, model_output, time, lw=1, alpha=0.1, c='r',zorder=0, **kwargs)
+        plot_model(ax, model_output, time, lw=1, alpha=0.1, c='g',zorder=0, **kwargs)
     ax.legend()
     ax.semilogy()
 

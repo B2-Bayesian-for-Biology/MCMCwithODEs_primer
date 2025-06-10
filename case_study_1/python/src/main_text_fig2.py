@@ -3,54 +3,62 @@ import death_normal_plotting as dp
 import matplotlib.pyplot as plt
 import arviz as az
 
-################################
-# load data and setup figs
-################################
-
-# setup figure
-f,ax = plt.subplots(2,2,figsize=[10,10])
-
+# Set up figure
+f, ax = plt.subplots(2, 2, figsize=[10, 10])
 ax = ax.flatten()
+
+# Axis labels
 ax[0].set_xlabel('Time (days)')
+ax[0].set_ylabel('Cells (ml$^{-1}$)')
+
 ax[1].set_xlabel('Time (days)')
+ax[1].set_ylabel('Cells (ml$^{-1}$)')
+
 ax[2].set_xlabel('Growth rate (day$^{-1}$)')
+ax[2].set_ylabel('Probability density')
+
 ax[3].set_xlabel('Growth rate (day$^{-1}$)')
-ax[0].set_ylabel('Cells (ml$^{-1}$')
-ax[1].set_ylabel('Cells (ml$^{-1}$')
-ax[2].set_ylabel('Probability density (day$^{-1}$)')
-ax[3].set_ylabel('Growth rate (day$^{-1}$)')
+ax[3].set_ylabel('Death rate (day$^{-1}$)')  # assuming delta is death rate
 
-################################
-# dynamics
-################################
-
+# Posterior predictive plots
 gp.plot_posterior_predictive(ax[0], gp.growth_trace, gp.time, gp.obs)
 dp.plot_posterior_predictive(ax[1], dp.death_trace, gp.time, gp.obs)
 
-################################
-# kernel plots
-################################
-
+# Extract samples
 gdf = az.extract(gp.growth_trace).to_dataframe()
 ddf = az.extract(dp.death_trace).to_dataframe()
 
-ax[2].hist(gdf.mum,alpha=0.5,density=True,color='r',label='Growth rate model')
-ax[2].hist(ddf.mum,alpha=0.5,density=True,color='g',label='(Growth-death) rate model')
+# KDE plots
+az.plot_kde(gdf['mum'].values, ax=ax[2],
+            plot_kwargs={'label': 'Growth rate model', 'color': 'g'})
+az.plot_kde(ddf['mum'].values, ax=ax[2],
+            plot_kwargs={'label': '(Growth-death) rate model', 'color': 'r'})
 
-l2 = ax[2].legend()
-l2.draw_frame(False)
+# Set font size for the labels
+ax[2].set_xlabel('Growth rate (day$^{-1}$)', fontsize=10)
+ax[2].set_ylabel('Probability density', fontsize=10)
+ax[2].tick_params(axis='both', labelsize=10)  # Change tick size for ax[2]
 
-################################
-# scatter plot
-################################
 
-ax[3].scatter(ddf.mum,ddf.delta)
+# Scatter plot of growth vs death rates
+ax[3].scatter(ddf.mum, ddf.delta, s=10, alpha=0.3)
+ax[3].set_title('Joint posterior: growth vs death')
 
-f.subplots_adjust(wspace=0.3,hspace=0.3)
-for (a,l) in zip(ax,'abcd'):
-    a.text(0.1,0.9,l,transform=a.transAxes)
-f.savefig('../figures/main_text_fig2',bbox_inches='tight',dpi=300)
+# Subplot labels
+f.subplots_adjust(wspace=0.3, hspace=0.3)
+for (a, l) in zip(ax, 'abcd'):
+    a.text(0.05, 0.9, f'({l})', transform=a.transAxes, fontsize=12)
 
+
+
+# Set font size for the labels in all subplots
+for i in range(len(ax)):
+    ax[i].set_xlabel(ax[i].get_xlabel(), fontsize=12)
+    ax[i].set_ylabel(ax[i].get_ylabel(), fontsize=12)
+    ax[i].tick_params(axis='both', labelsize=12)  # Change tick size for all axes
+
+
+# Save figure
+f.savefig('../figures/main_text_fig2.png', bbox_inches='tight', dpi=600)
 plt.close(f)
-
 
