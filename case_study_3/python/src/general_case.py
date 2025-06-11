@@ -12,19 +12,21 @@ import logging
 import os
 from plotting import *
 
+
 ## differential equation and solvers
+def general_case(y, t, params):
 
-def logistic_growth_death(y, t, params):
     # Use indexing instead of unpacking
-    P = y[0]
-    D = y[1]
-    r = params[0]
-    K = params[1]
-    delta = params[2]
+    N, P, D = y[0], y[1], y[2] 
+    mu_max,Ks,Qn,delta = params[0], params[1], params[2], params[3]
 
-    dydt = [0, 0]
-    dydt[0] = r * (1 - P / K) * P - delta * P
-    dydt[1] = delta * P
+    dydt = [0, 0, 0]
+    
+
+    dydt[0] = -Qn*mu_max*N*P*1e6/(N+Ks)
+    dydt[1] = mu_max*N*P/(N+Ks) - delta*P
+    dydt[2] = delta*P
+
     return dydt
 
 
@@ -36,28 +38,33 @@ def build_pymc_model(dataset):
     death_data = dataset.tail(10)
 
     cell_model = pm.ode.DifferentialEquation(
-        func=logistic_growth_death,
+        func=general_case,
         times=data['time (hours)'].values,
-        n_states=2,
-        n_theta=3, # because rest goes in y0 
+        n_states=3,
+        n_theta=4, # because rest goes in y0 
         t0=0
     )
 
     with pm.Model() as model:
-        # Priors
-        r = pm.Uniform(r"$r$ (growth rate)", lower=0.25, upper=1)
-        K = pm.Uniform(r"$K$ (carrying capacity)" , lower=2e6, upper=1e7)
-        delta = pm.Uniform(r"$\delta$ (death rate)", lower=0.05, upper=0.25)
+        # Priors parameters
+        mu_max = pm.Uniform(r"$\mu_{max}$",lower=0.1, upper=0.4)  
+        Ks = pm.Uniform(r"$K_s$" , lower=0.05, upper=0.3)
+        Qn = pm.Uniform(r"$Q_n$ (nutrient uptake rate)", lower=1e-10, upper=50e-10)
+        delta = pm.Uniform(r"$\delta$ (death rate)", lower=0.05, upper=0.3)
+        
+        # prior initial conditions
+        N0 = pm.Uniform(r"$N_0$ (nutrients)", lower=1000, upper=7000)  
         P0 = pm.Uniform(r"$P_0$ (init. live)", lower=3e5, upper=7e5)
-        D0 = pm.Uniform(r"$D_0$ (init. dead)", lower=1e5, upper=4e5)
-
+        D0 = pm.Uniform(r"$D_0$ (init. dead)",  lower=1e5, upper=4e5)
+        
+        # prior noise parameters
         sigma_live = pm.HalfNormal(r"$\sigma_L$", 3)
         sigma_dead = pm.HalfNormal(r"$\sigma_D$", 3)
 
         # Solve the ODE system
-        y_hat = cell_model(y0=[P0,D0], theta=[r,K,delta])
-        live_solution = y_hat[:,0]
-        dead_solution = y_hat[:,1]
+        y_hat = cell_model(y0=[N0,P0,D0], theta=[mu_max,Ks,Qn,delta])
+        live_solution = y_hat[:,1]
+        dead_solution = y_hat[:,2]
         total_solution = live_solution + dead_solution
 
         # Log likelihoods
@@ -73,18 +80,22 @@ def build_pymc_model(dataset):
 
     return model       
 
+
+
 # ---------------------------
 # INFERENCE
 # ---------------------------
 #        
 
-def run_inference(model, draws=500, tune=500, chains=4, cores = 4):
+
+def run_inference(model, draws=500, tune=500, chains=4, cores=4):
     with model:
-        trace = pm.sample(draws=draws, tune=tune, chains=chains, return_inferencedata=True, target_accept=0.95, cores = cores)
-        #pm.set_data({"total_cells": total_data, "dead_cells": dead_data})
-        #posterior_predictive = pm.sample_posterior_predictive(trace)
-    
+        step = pm.Slice()  # Use slice sampling
+        trace = pm.sample(draws=draws, tune=tune, chains=chains,
+                          return_inferencedata=True, target_accept=0.95,
+                          cores=cores, step=step)
     return trace
+
 
 
 # ---------------------------
@@ -99,7 +110,7 @@ if __name__ == "__main__":
     data = dataset.head(10)
     death_data = dataset.tail(10)
     
-    file_path = '../data/logistic_growth_death_chain.nc'
+    file_path = '../data/general_chain.nc'
     # Build and run model
     model = build_pymc_model(dataset)
     
@@ -112,10 +123,10 @@ if __name__ == "__main__":
 
     # Plotting part
     trace = az.from_netcdf(file_path)
-    #plot_trace(trace, save_path='../figures/logistic_growth_death_trace.png')
-    #plot_posterior(trace, save_path='../figures/logistic_growth_death_posterior.png')
-    #plot_autocorrelation(trace, save_path='../figures/logistic_growth_death_autocorrelation.png')
-    #run_posterior_predictive_checks(model, trace, var_names=["Y_live", "Y_dead"], plot=True, savepath='../figures/logistic_growth_death_posterior_predictive')
+    plot_trace(trace, save_path='../figures/general_trace.png')
+    plot_posterior(trace, save_path='../figures/general_posterior.png')
+    plot_autocorrelation(trace, save_path='../figures/general_autocorrelation.png')
+    #run_posterior_predictive_checks(model, trace, var_names=["Y_live", "Y_dead"], plot=True, savepath='../figures/general_posterior_predictive')
 
     
     # Extracting the time and cell counts for plotting
@@ -145,9 +156,9 @@ if __name__ == "__main__":
         # last two are initial conditions
         y0 = [theta[-2], theta[-1]]
         time_finer = np.linspace(data['time (hours)'].values[0], data['time (hours)'].values[-1], 100)
-        sol = odeint(logistic_growth_death, y0, t=time_finer, args=(theta[:-2],), rtol=1e-6, atol=1e-6)
-        live = sol[:, 0]
-        dead = sol[:, 1]
+        sol = odeint(general_case, y0, t=time_finer, args=(theta[:-2],), rtol=1e-6, atol=1e-6)
+        live = sol[:, 1]
+        dead = sol[:, 2]
         total = live + dead
 
         plt.subplot(1, 2, 1)
@@ -180,49 +191,3 @@ if __name__ == "__main__":
 
     plt.tight_layout()
     plt.show()
-
-   
-
-
-'''
-
-# Posterior predictive checks
-with model:
-    
-
-# Extracting predictions
-live_pred = posterior_predictive['Y_live']
-dead_pred = posterior_predictive['Y_dead']
-
-# Plotting posterior predictive
-fig, axs = plt.subplots(2, 1, figsize=(10, 10))
-
-# Live cells
-axs[0].plot(data['time (hours)'], np.exp(live_pred).mean(axis=0), label='Posterior Predictive Mean', color='blue')
-axs[0].fill_between(data['time (hours)'], 
-                    np.percentile(np.exp(live_pred), 5, axis=0), 
-                    np.percentile(np.exp(live_pred), 95, axis=0), 
-                    color='blue', alpha=0.3, label='95% CI')
-axs[0].scatter(data['time (hours)'], np.exp(total_data), color='black', label='Observed Data')
-axs[0].set_title('Posterior Predictive for Live Cells')
-axs[0].set_xlabel('Time (hours)')
-axs[0].set_ylabel('Live Cells')
-axs[0].legend()
-
-# Dead cells
-axs[1].plot(death_data['time (hours)'], np.exp(dead_pred).mean(axis=0), label='Posterior Predictive Mean', color='red')
-axs[1].fill_between(death_data['time (hours)'], 
-                    np.percentile(np.exp(dead_pred), 5, axis=0), 
-                    np.percentile(np.exp(dead_pred), 95, axis=0), 
-                    color='red', alpha=0.3, label='95% CI')
-axs[1].scatter(death_data['time (hours)'], np.exp(dead_data), color='black', label='Observed Data')
-axs[1].set_title('Posterior Predictive for Dead Cells')
-axs[1].set_xlabel('Time (hours)')
-axs[1].set_ylabel('Dead Cells')
-axs[1].legend()
-
-plt.tight_layout()
-plt.savefig('../figures/logistic_growth_death_posterior_predictive.png')
-plt.show()
-
-'''

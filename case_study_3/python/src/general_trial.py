@@ -26,11 +26,13 @@ death_data = death_whole.tail(10)
 # Correct: use .iloc[0] to access by position
 print(death_data['rep1'].iloc[0])
  
+total_init = (data['rep1'].iloc[0] + data['rep2'].iloc[0] + data['rep3'].iloc[0]) / 3
+dead_init = (death_data['rep1'].iloc[0] + death_data['rep2'].iloc[0] + death_data['rep3'].iloc[0]) / 3
+live_init = total_init - dead_init
+
 # Initial conditions with correct indexing
-y0_guess = [10000,
-    (data['rep1'].iloc[0] + data['rep2'].iloc[0] + data['rep3'].iloc[0]) / 3,
-    (death_data['rep1'].iloc[0] + death_data['rep2'].iloc[0] + death_data['rep3'].iloc[0]) / 3
-]
+y0_guess = [4000,live_init,dead_init]  # Initial conditions for live and dead cells
+
 
 
 ## differential equation and solvers
@@ -49,10 +51,10 @@ def solved_num_cells(y0,t,mu_max,Ks,Qn,delta):
     return sol
 
 # Initial guesses for parameters
-delta_guess = 0.1
-mu_max_guess = 0.6
-Ks_guess = 0.09
-Qn_guess = 6.7e-10
+delta_guess = 0.15
+mu_max_guess = 0.3
+Ks_guess = 0.1
+Qn_guess = 8e-10
 
 
 avg_data = data[['rep1', 'rep2', 'rep3']].mean(axis=1)
@@ -64,12 +66,14 @@ t = np.linspace(0, 20, 100)
 # guess solution
 solution = solved_num_cells(y0_guess,t, mu_max_guess,Ks_guess, Qn_guess, delta_guess)
 
+total_cells = solution[:,1] + solution[:,2]
+dead_cells = solution[:,2]
 
 plt.subplot(1, 2, 1)
 plt.plot(data['time (hours)'],data['rep1'],'o',color ='orange')
 plt.plot(data['time (hours)'],data['rep2'],'o',color ='blue')
 plt.plot(data['time (hours)'],data['rep3'],'o',color ='green')
-plt.plot(t,solution[:,1],'-',color ='k')
+plt.plot(t,total_cells,'-',color ='k')
 plt.xlabel('Time (hrs)')
 plt.ylabel(data.columns[1])
 plt.yscale('log')
@@ -81,7 +85,7 @@ plt.subplot(1, 2, 2)
 plt.plot(death_data['time (hours)'],death_data['rep1'],'o',color ='orange')
 plt.plot(death_data['time (hours)'],death_data['rep2'],'o',color ='blue')
 plt.plot(death_data['time (hours)'],death_data['rep3'],'o',color ='green')
-plt.plot(t,solution[:,2],'-',color ='k')
+plt.plot(t,dead_cells,'-',color ='k')
 plt.xlabel(death_data.columns[0])
 plt.ylabel('Cells')
 plt.yscale('log')
@@ -123,22 +127,42 @@ import pytensor.tensor as pt
 
 
 with pm.Model() as model:
-    # Priors
-    mu_max = pm.Uniform(r"$\mu_{max}$",lower=0.2, upper=0.7)  
-    Ks = pm.Uniform(r"$K$ (carrying capacity)" , lower=5e6, upper=2e7)
-    Qn = pm.Lognormal('Qn', mu=-21.1287, sigma=0.09975)
+    # Priors parameters
+    mu_max = pm.Uniform(r"$\mu_{max}$",lower=0.1, upper=0.4)  
+    Ks = pm.Uniform(r"$K_s$" , lower=0.05, upper=0.3)
+    Qn = pm.Uniform(r"$Q_n$ (nutrient uptake rate)", lower=1e-10, upper=50e-10)
     delta = pm.Uniform(r"$\delta$ (death rate)", lower=0.05, upper=0.3)
     
-    N0 = pm.Uniform(r"$N_0$ (nutrients)", lower=10, upper=1000)  
-    P0 = pm.Uniform(r"$P_0$ (init. live)", lower=4.5e5, upper=9e5)
-    D0 = pm.Uniform(r"$D_0$ (init. dead)", lower=1e5, upper=3e5)
-
+    # prior initial conditions
+    N0 = pm.Uniform(r"$N_0$ (nutrients)", lower=1000, upper=7000)  
+    P0 = pm.Uniform(r"$P_0$ (init. live)", lower=3e5, upper=7e5)
+    D0 = pm.Uniform(r"$D_0$ (init. dead)",  lower=1e5, upper=4e5)
+    
+    # prior noise parameters
     sigma_live = pm.HalfNormal(r"$\sigma_L$", 3)
     sigma_dead = pm.HalfNormal(r"$\sigma_D$", 3)
 
     theta = pm.math.stack([mu_max,Ks,Qn,delta, N0, P0, D0])
-    live_solution, dead_solution = pytensor_forward_model_matrix_vary_init(theta)
+    result_1, result_2 = pytensor_forward_model_matrix_vary_init(theta)
 
+    live_solution = result_1[:,0]
+    dead_solution = result_2[:,1]
+
+    total_solution = live_solution + dead_solution
+    print(total_solution.shape)
+
+    # Log likelihoods
+    #### I need to clip the values to avoid log(0) ####
+    total_data = pm.Data("total_cells", np.log(data[['rep1', 'rep2', 'rep3']].mean(axis=1).values)) 
+    dead_data = pm.Data("dead_cells", np.log(death_data[['rep1', 'rep2', 'rep3']].mean(axis=1).values)) 
+    
+    pm.Normal("Y_live", mu=pm.math.log(pm.math.clip(total_solution, 1e-8, np.inf)),sigma=sigma_live,
+            observed= total_data)
+
+    pm.Normal("Y_dead", mu=pm.math.log(pm.math.clip(dead_solution, 1e-8, np.inf)),sigma=sigma_dead,
+            observed=dead_data)
+
+    '''
     # Likelihoods
     avg_data = data[['rep1', 'rep2', 'rep3']].mean(axis=1)
 
@@ -154,14 +178,15 @@ with pm.Model() as model:
     #          observed=np.log(avg_dead.values))
     pm.Normal("Y_dead", mu=pm.math.log(pm.math.clip(live_solution[:, 1], 1e-8, np.inf)),sigma=sigma_dead,
               observed=np.log(avg_dead.values))
+    '''
     
     
 #model.debug()
 
 # Specify the sampler
 sampler = "Slice Sampler"
-tune  = 10000
-draws = 5000
+tune  = 1000
+draws = 1000
 
 # Variable list to give to the sample step parameter
 vars_list = list(model.values_to_rvs.keys())[:-1]
@@ -206,13 +231,13 @@ plt.show()
 
 
 '''
-
+'''
 
 # Get posterior samples as a NumPy array
 posterior_samples = trace.posterior.stack(draws=("chain", "draw"))
 posterior_array = np.vstack([
     posterior_samples["$r$ (growth rate)"].values,
-    posterior_samples["$K$ (carrying capacity)"].values,
+    posterior_samples["$K_s$"].values,
     posterior_samples["$\delta$ (death rate)"].values,
     posterior_samples["$P_0$ (init. live)"].values,
     posterior_samples["$D_0$ (init. dead)"].values
@@ -262,5 +287,4 @@ plt.show()
 
 # Save chain to a CSV file
 df_trace = az.convert_to_inference_data(obj=trace).to_dataframe(include_coords=False,groups='posterior')
-df_trace.to_csv('./../res/chain_results.csv', index=False)
-'''
+df_trace.to_csv('./../res/general_case_trace.csv', index=False)

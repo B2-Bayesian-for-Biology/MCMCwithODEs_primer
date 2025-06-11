@@ -256,6 +256,6 @@ plt.show()
 
 # Save chain to a CSV file
 df_trace = az.convert_to_inference_data(obj=trace).to_dataframe(include_coords=False,groups='posterior')
-df_trace.to_csv('./../res/logistic_growth_death_chain.csv', index=False)
+#df_trace.to_csv('./../res/logistic_growth_death_chain.csv', index=False)
 
 
