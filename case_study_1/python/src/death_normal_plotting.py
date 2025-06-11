@@ -40,6 +40,7 @@ plt.savefig('../figures/normal_death_autocorrelation')
 # dynamics
 ############################################
 
+
 # Plot the original data
 def plot_data(ax, time, obs, **kwargs):
     ax.plot(time, obs, 'ko', label=r'$Phaeocystis$ $globosa$',zorder=1, **kwargs)
