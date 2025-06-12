@@ -117,9 +117,8 @@ def cells_growth_death(y,t,theta):
 def pytensor_forward_model_matrix_vary_init(theta):
     y0 = [theta[-3], theta[-2], theta[-1]]  # Initial conditions for live and dead cells
     # Simulate ODE for each time series separately
-    result_1 = odeint(cells_growth_death, y0, t=data['time (hours)'].values, args=(theta[:-3],), rtol=1e-6, atol=1e-6)
-    result_2 = odeint(cells_growth_death, y0, t=death_data['time (hours)'].values, args=(theta[:-3],), rtol=1e-6, atol=1e-6)
-    return result_1, result_2
+    result = odeint(cells_growth_death, y0, t=data['time (hours)'].values, args=(theta[:-3],), rtol=1e-6, atol=1e-6)
+    return result_1
 
 
 
@@ -128,13 +127,13 @@ import pytensor.tensor as pt
 
 with pm.Model() as model:
     # Priors parameters
-    mu_max = pm.Uniform(r"$\mu_{max}$",lower=0.1, upper=0.4)  
+    mu_max = pm.Uniform(r"$\mu_{max}$",lower=0.2, upper=0.4)  
     Ks = pm.Uniform(r"$K_s$" , lower=0.05, upper=0.3)
-    Qn = pm.Uniform(r"$Q_n$ (nutrient uptake rate)", lower=1e-10, upper=50e-10)
-    delta = pm.Uniform(r"$\delta$ (death rate)", lower=0.05, upper=0.3)
+    Qn = pm.Uniform(r"$Q_n$ (nutrient uptake rate)", lower=4e-10, upper=15e-10)
+    delta = pm.Uniform(r"$\delta$ (death rate)", lower=0.05, upper=0.2)
     
     # prior initial conditions
-    N0 = pm.Uniform(r"$N_0$ (nutrients)", lower=1000, upper=7000)  
+    N0 = pm.Uniform(r"$N_0$ (nutrients)", lower=2500, upper=6000)  
     P0 = pm.Uniform(r"$P_0$ (init. live)", lower=3e5, upper=7e5)
     D0 = pm.Uniform(r"$D_0$ (init. dead)",  lower=1e5, upper=4e5)
     
@@ -143,10 +142,10 @@ with pm.Model() as model:
     sigma_dead = pm.HalfNormal(r"$\sigma_D$", 3)
 
     theta = pm.math.stack([mu_max,Ks,Qn,delta, N0, P0, D0])
-    result_1, result_2 = pytensor_forward_model_matrix_vary_init(theta)
+    result = pytensor_forward_model_matrix_vary_init(theta)
 
-    live_solution = result_1[:,0]
-    dead_solution = result_2[:,1]
+    live_solution = result[:,0]
+    dead_solution = result[:,1]
 
     total_solution = live_solution + dead_solution
     print(total_solution.shape)
@@ -193,7 +192,7 @@ vars_list = list(model.values_to_rvs.keys())[:-1]
 print(vars_list)
 
 with model:
-    trace = pm.sample(tune=tune, draws=draws,target_accept=0.95, chains=4, cores=4)
+    trace = pm.sample(tune=tune, draws=draws,target_accept=0.85, chains=4, cores=4)
 
 
 # Plot chains
@@ -236,9 +235,11 @@ plt.show()
 # Get posterior samples as a NumPy array
 posterior_samples = trace.posterior.stack(draws=("chain", "draw"))
 posterior_array = np.vstack([
-    posterior_samples["$r$ (growth rate)"].values,
+    posterior_samples["$\mu_{max}$"].values,
     posterior_samples["$K_s$"].values,
+    posterior_samples["$Q_n$ (nutrient uptake rate)"].values,
     posterior_samples["$\delta$ (death rate)"].values,
+    posterior_samples["$N_0$ (nutrients)"].values,
     posterior_samples["$P_0$ (init. live)"].values,
     posterior_samples["$D_0$ (init. dead)"].values
 ]).T  # Shape: (n_samples, 5)
@@ -250,21 +251,26 @@ plt.figure(figsize=(12, 6))
 for i in range(n_plot):
     theta = posterior_array[i]
     # last two are initial conditions
-    y0 = [theta[-2], theta[-1]]
-    sol_live = odeint(cells_growth_death, y0, t=data['time (hours)'].values, args=(theta[:-2],), rtol=1e-6, atol=1e-6)
-    sol_dead = odeint(cells_growth_death, y0, t=death_data['time (hours)'].values, args=(theta[:-2],), rtol=1e-6, atol=1e-6)
+    y0 = [theta[-3], theta[-2], theta[-1]]
+    sol_both = odeint(cells_growth_death, y0, t=data['time (hours)'].values, args=(theta[:-3],), rtol=1e-6, atol=1e-6)
+
+    live_solution = sol_both[:,1]
+    dead_solution = sol_both[:,2]
+
+    total_solution = live_solution + dead_solution
 
     plt.subplot(1, 2, 1)
-    plt.plot(data['time (hours)'], sol_live[:, 0], '-', color='gray', alpha=0.1)
+    plt.plot(data['time (hours)'], total_solution, '-', color='deepskyblue', alpha=0.1)
 
     plt.subplot(1, 2, 2)
-    plt.plot(death_data['time (hours)'], sol_dead[:, 1], '-', color='gray', alpha=0.1)
+    plt.plot(data['time (hours)'], total_solution, '-', color='deepskyblue', alpha=0.1)
+    
 
 # Add data points on top
 plt.subplot(1, 2, 1)
-plt.plot(data['time (hours)'], data['rep1'], 'o', color='orange')
-plt.plot(data['time (hours)'], data['rep2'], 'o', color='blue')
-plt.plot(data['time (hours)'], data['rep3'], 'o', color='green')
+plt.plot(data['time (hours)'], data['rep1'], 'o', color='black')
+plt.plot(data['time (hours)'], data['rep2'], 'o', color='black')
+plt.plot(data['time (hours)'], data['rep3'], 'o', color='black')
 plt.xlabel('Time (hrs)')
 plt.ylabel('Live cells')
 plt.yscale('log')
@@ -272,9 +278,9 @@ plt.ylim(1e5, 1e7)
 plt.xlim(0, 20)
 
 plt.subplot(1, 2, 2)
-plt.plot(death_data['time (hours)'], death_data['rep1'], 'o', color='orange')
-plt.plot(death_data['time (hours)'], death_data['rep2'], 'o', color='blue')
-plt.plot(death_data['time (hours)'], death_data['rep3'], 'o', color='green')
+plt.plot(death_data['time (hours)'], death_data['rep1'], 'o', color='black')
+plt.plot(death_data['time (hours)'], death_data['rep2'], 'o', color='black')
+plt.plot(death_data['time (hours)'], death_data['rep3'], 'o', color='black')
 #plt.xlabel(death_data.columns[0])
 plt.xlabel('Time (hrs)')
 plt.ylabel('Dead cells')
