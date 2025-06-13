@@ -31,13 +31,11 @@ dead_init = (death_data['rep1'].iloc[0] + death_data['rep2'].iloc[0] + death_dat
 live_init = total_init - dead_init
 
 # Initial conditions with correct indexing
-y0_guess = [4000,live_init,dead_init]  # Initial conditions for live and dead cells
-
+y0_guess = [500,live_init,dead_init]  # Initial conditions for live and dead cells
+print(f"init condi {y0_guess}")
 
 
 ## differential equation and solvers
-
-
 def cells_growth_death(y,t,mu_max,Ks,Qn,delta):
     N, P, D = y
     dydt = [0,0,0]
@@ -51,10 +49,10 @@ def solved_num_cells(y0,t,mu_max,Ks,Qn,delta):
     return sol
 
 # Initial guesses for parameters
-delta_guess = 0.15
+delta_guess = 0.1
 mu_max_guess = 0.3
-Ks_guess = 0.1
-Qn_guess = 8e-10
+Ks_guess = 1
+Qn_guess = 1e-10
 
 
 avg_data = data[['rep1', 'rep2', 'rep3']].mean(axis=1)
@@ -68,28 +66,46 @@ solution = solved_num_cells(y0_guess,t, mu_max_guess,Ks_guess, Qn_guess, delta_g
 
 total_cells = solution[:,1] + solution[:,2]
 dead_cells = solution[:,2]
+live_cells = solution[:,1]  
 
-plt.subplot(1, 2, 1)
+
+plt.subplot(1, 4, 1)
+plt.plot(t,solution[:,0],'-',color ='k')
+plt.xlabel('Time (hrs)')
+plt.xlim(0, 20)
+
+plt.subplot(1, 4, 2)
 plt.plot(data['time (hours)'],data['rep1'],'o',color ='orange')
 plt.plot(data['time (hours)'],data['rep2'],'o',color ='blue')
 plt.plot(data['time (hours)'],data['rep3'],'o',color ='green')
 plt.plot(t,total_cells,'-',color ='k')
 plt.xlabel('Time (hrs)')
-plt.ylabel(data.columns[1])
+plt.ylabel('Total cells')
 plt.yscale('log')
 plt.ylim(1e5, 1e7)
 plt.xlim(0, 20)
 
 
-plt.subplot(1, 2, 2)
+plt.subplot(1, 4, 3)
 plt.plot(death_data['time (hours)'],death_data['rep1'],'o',color ='orange')
 plt.plot(death_data['time (hours)'],death_data['rep2'],'o',color ='blue')
 plt.plot(death_data['time (hours)'],death_data['rep3'],'o',color ='green')
 plt.plot(t,dead_cells,'-',color ='k')
-plt.xlabel(death_data.columns[0])
+plt.xlabel('Dead Cells')
 plt.ylabel('Cells')
 plt.yscale('log')
 plt.ylim(1e5, 1e7)
+plt.xlim(0, 20)
+
+
+
+plt.subplot(1, 4, 4)
+live_data = data['rep1'].values - death_data['rep1'].values
+plt.plot(data['time (hours)'],live_data,'o',color ='orange')
+plt.plot(t,live_cells,'-',color ='k')
+plt.xlabel('Live Cells')
+plt.ylabel('Cells')
+plt.yscale('log')
 plt.xlim(0, 20)
 plt.show()
 
@@ -113,12 +129,12 @@ def cells_growth_death(y,t,theta):
 
 
 
-@as_op(itypes=[pt.dvector], otypes=[pt.dmatrix, pt.dmatrix])
+@as_op(itypes=[pt.dvector], otypes=[pt.dmatrix])
 def pytensor_forward_model_matrix_vary_init(theta):
     y0 = [theta[-3], theta[-2], theta[-1]]  # Initial conditions for live and dead cells
     # Simulate ODE for each time series separately
-    result = odeint(cells_growth_death, y0, t=data['time (hours)'].values, args=(theta[:-3],), rtol=1e-6, atol=1e-6)
-    return result_1
+    result = odeint(cells_growth_death, y0, t=data['time (hours)'].values, args=(theta[:-3],))
+    return result
 
 
 
@@ -127,25 +143,27 @@ import pytensor.tensor as pt
 
 with pm.Model() as model:
     # Priors parameters
-    mu_max = pm.Uniform(r"$\mu_{max}$",lower=0.2, upper=0.4)  
-    Ks = pm.Uniform(r"$K_s$" , lower=0.05, upper=0.3)
-    Qn = pm.Uniform(r"$Q_n$ (nutrient uptake rate)", lower=4e-10, upper=15e-10)
-    delta = pm.Uniform(r"$\delta$ (death rate)", lower=0.05, upper=0.2)
+    mu_max = pm.Uniform(r"$\mu_{max}$",lower=0.25, upper=0.35)  
+    Ks = pm.Uniform(r"$K_s$" , lower=0.9, upper=1.1)
+    Qn = pm.Uniform(r"$Q_n$ (nutrient uptake rate)", lower=0.05e-10, upper=0.15e-10)
+    delta = pm.Uniform(r"$\delta$ (death rate)", lower=0.05, upper=0.15)
+
+    
     
     # prior initial conditions
-    N0 = pm.Uniform(r"$N_0$ (nutrients)", lower=2500, upper=6000)  
-    P0 = pm.Uniform(r"$P_0$ (init. live)", lower=3e5, upper=7e5)
-    D0 = pm.Uniform(r"$D_0$ (init. dead)",  lower=1e5, upper=4e5)
+    N0 = pm.Uniform(r"$N_0$ (nutrients)", lower=40, upper=60)  
+    P0 = pm.Uniform(r"$P_0$ (init. live)", lower=3.5e5, upper=7e5)
+    D0 = pm.Uniform(r"$D_0$ (init. dead)",  lower=1e5, upper=2.8e5)
     
     # prior noise parameters
-    sigma_live = pm.HalfNormal(r"$\sigma_L$", 3)
-    sigma_dead = pm.HalfNormal(r"$\sigma_D$", 3)
+    sigma_live = pm.HalfNormal(r"$\sigma_L$", 1)
+    sigma_dead = pm.HalfNormal(r"$\sigma_D$", 1)
 
     theta = pm.math.stack([mu_max,Ks,Qn,delta, N0, P0, D0])
-    result = pytensor_forward_model_matrix_vary_init(theta)
+    results = pytensor_forward_model_matrix_vary_init(theta)
 
-    live_solution = result[:,0]
-    dead_solution = result[:,1]
+    live_solution = results[:,1]
+    dead_solution = results[:,2]
 
     total_solution = live_solution + dead_solution
     print(total_solution.shape)
@@ -161,23 +179,9 @@ with pm.Model() as model:
     pm.Normal("Y_dead", mu=pm.math.log(pm.math.clip(dead_solution, 1e-8, np.inf)),sigma=sigma_dead,
             observed=dead_data)
 
-    '''
-    # Likelihoods
-    avg_data = data[['rep1', 'rep2', 'rep3']].mean(axis=1)
-
-    #### I need to clip the values to avoid log(0) ####
-
-    #pm.Normal("Y_live", mu=pm.math.log(live_solution[:, 0]), sigma=sigma_live,
-    #          observed=np.log(avg_data.values))
-    pm.Normal("Y_live", mu=pm.math.log(pm.math.clip(live_solution[:, 0], 1e-8, np.inf)),sigma=sigma_live,
-              observed=np.log(avg_data.values))
     
-    avg_dead = death_data[['rep1', 'rep2', 'rep3']].mean(axis=1)
-    #pm.Normal("Y_dead", mu=pm.math.log(dead_solution[:, 1]), sigma=sigma_dead,
-    #          observed=np.log(avg_dead.values))
-    pm.Normal("Y_dead", mu=pm.math.log(pm.math.clip(live_solution[:, 1], 1e-8, np.inf)),sigma=sigma_dead,
-              observed=np.log(avg_dead.values))
-    '''
+    
+    
     
     
 #model.debug()
@@ -192,7 +196,7 @@ vars_list = list(model.values_to_rvs.keys())[:-1]
 print(vars_list)
 
 with model:
-    trace = pm.sample(tune=tune, draws=draws,target_accept=0.85, chains=4, cores=4)
+    trace = pm.sample(tune=tune, draws=draws,target_accept=0.8, chains=4, cores=4)
 
 
 # Plot chains
@@ -252,7 +256,7 @@ for i in range(n_plot):
     theta = posterior_array[i]
     # last two are initial conditions
     y0 = [theta[-3], theta[-2], theta[-1]]
-    sol_both = odeint(cells_growth_death, y0, t=data['time (hours)'].values, args=(theta[:-3],), rtol=1e-6, atol=1e-6)
+    sol_both = odeint(cells_growth_death, y0, t=data['time (hours)'].values, args=(theta[:-3],))
 
     live_solution = sol_both[:,1]
     dead_solution = sol_both[:,2]
@@ -263,7 +267,7 @@ for i in range(n_plot):
     plt.plot(data['time (hours)'], total_solution, '-', color='deepskyblue', alpha=0.1)
 
     plt.subplot(1, 2, 2)
-    plt.plot(data['time (hours)'], total_solution, '-', color='deepskyblue', alpha=0.1)
+    plt.plot(data['time (hours)'], dead_solution, '-', color='deepskyblue', alpha=0.1)
     
 
 # Add data points on top
@@ -293,4 +297,7 @@ plt.show()
 
 # Save chain to a CSV file
 df_trace = az.convert_to_inference_data(obj=trace).to_dataframe(include_coords=False,groups='posterior')
-df_trace.to_csv('./../res/general_case_trace.csv', index=False)
+# Save trace to a NetCDF file
+file_path = './../res/general_case_trace_v0.nc'
+az.to_netcdf(trace, file_path)
+

@@ -13,6 +13,7 @@ import os
 from plotting import *
 
 
+
 ## differential equation and solvers
 def general_case(y, t, params):
 
@@ -46,6 +47,7 @@ def build_pymc_model(dataset):
     )
 
     with pm.Model() as model:
+        '''
         # Priors parameters
         mu_max = pm.Uniform(r"$\mu_{max}$",lower=0.1, upper=0.4)  
         Ks = pm.Uniform(r"$K_s$" , lower=0.05, upper=0.3)
@@ -54,6 +56,21 @@ def build_pymc_model(dataset):
         
         # prior initial conditions
         N0 = pm.Uniform(r"$N_0$ (nutrients)", lower=1000, upper=7000)  
+        P0 = pm.Uniform(r"$P_0$ (init. live)", lower=3e5, upper=7e5)
+        D0 = pm.Uniform(r"$D_0$ (init. dead)",  lower=1e5, upper=4e5)
+        
+        # prior noise parameters
+        sigma_live = pm.HalfNormal(r"$\sigma_L$", 3)
+        sigma_dead = pm.HalfNormal(r"$\sigma_D$", 3)
+        '''
+
+        mu_max = pm.Uniform(r"$\mu_{max}$",lower=0.2, upper=0.35)  
+        Ks = pm.Uniform(r"$K_s$" , lower=0.05, upper=0.3)
+        Qn = pm.Uniform(r"$Q_n$ (nutrient uptake rate)", lower=3e-10, upper=7e-10)
+        delta = pm.Uniform(r"$\delta$ (death rate)", lower=0.05, upper=0.3)
+        
+        # prior initial conditions
+        N0 = pm.Uniform(r"$N_0$ (nutrients)", lower=4000, upper=8000)  
         P0 = pm.Uniform(r"$P_0$ (init. live)", lower=3e5, upper=7e5)
         D0 = pm.Uniform(r"$D_0$ (init. dead)",  lower=1e5, upper=4e5)
         
@@ -88,12 +105,12 @@ def build_pymc_model(dataset):
 #        
 
 
-def run_inference(model, draws=500, tune=500, chains=4, cores=4):
+def run_inference(model, draws=1000, tune=1000, chains=4, cores=4):
     with model:
-        step = pm.Slice()  # Use slice sampling
+        
         trace = pm.sample(draws=draws, tune=tune, chains=chains,
-                          return_inferencedata=True, target_accept=0.95,
-                          cores=cores, step=step)
+                          return_inferencedata=True, target_accept=0.85,
+                          cores=cores)
     return trace
 
 
@@ -110,11 +127,12 @@ if __name__ == "__main__":
     data = dataset.head(10)
     death_data = dataset.tail(10)
     
-    file_path = '../data/general_chain.nc'
+    file_path = '../res/general_case_chain.nc'
     # Build and run model
     model = build_pymc_model(dataset)
     
     if not os.path.exists(file_path):
+        print(f"Running model and saving trace to {file_path}")
         trace = run_inference(model)
         az.to_netcdf(trace, file_path)
     else:
@@ -123,9 +141,10 @@ if __name__ == "__main__":
 
     # Plotting part
     trace = az.from_netcdf(file_path)
-    plot_trace(trace, save_path='../figures/general_trace.png')
-    plot_posterior(trace, save_path='../figures/general_posterior.png')
-    plot_autocorrelation(trace, save_path='../figures/general_autocorrelation.png')
+
+    #plot_trace(trace, save_path='../figures/general_trace.png')
+    #plot_posterior(trace, save_path='../figures/general_posterior.png')
+    #plot_autocorrelation(trace, save_path='../figures/general_autocorrelation.png')
     #run_posterior_predictive_checks(model, trace, var_names=["Y_live", "Y_dead"], plot=True, savepath='../figures/general_posterior_predictive')
 
     
@@ -140,11 +159,13 @@ if __name__ == "__main__":
     # Get posterior samples as a NumPy array
     posterior_samples = trace.posterior.stack(draws=("chain", "draw"))
     posterior_array = np.vstack([
-        posterior_samples["$r$ (growth rate)"].values,
-        posterior_samples["$K$ (carrying capacity)"].values,
-        posterior_samples["$\delta$ (death rate)"].values,
-        posterior_samples["$P_0$ (init. live)"].values,
-        posterior_samples["$D_0$ (init. dead)"].values
+    posterior_samples["$\mu_{max}$"].values,
+    posterior_samples["$K_s$"].values,
+    posterior_samples["$Q_n$ (nutrient uptake rate)"].values,
+    posterior_samples["$\delta$ (death rate)"].values,
+    posterior_samples["$N_0$ (nutrients)"].values,
+    posterior_samples["$P_0$ (init. live)"].values,
+    posterior_samples["$D_0$ (init. dead)"].values
     ]).T  # Shape: (n_samples, 5)
 
     n_plot = 200  # Number of samples to simulate for plotting
@@ -154,9 +175,9 @@ if __name__ == "__main__":
     for i in range(n_plot):
         theta = posterior_array[i]
         # last two are initial conditions
-        y0 = [theta[-2], theta[-1]]
+        y0 = [theta[-3], theta[-2], theta[-1]]
         time_finer = np.linspace(data['time (hours)'].values[0], data['time (hours)'].values[-1], 100)
-        sol = odeint(general_case, y0, t=time_finer, args=(theta[:-2],), rtol=1e-6, atol=1e-6)
+        sol = odeint(general_case, y0, t=time_finer, args=(theta[:-3],), rtol=1e-6, atol=1e-6)
         live = sol[:, 1]
         dead = sol[:, 2]
         total = live + dead
@@ -169,19 +190,19 @@ if __name__ == "__main__":
 
     # Add data points on top
     plt.subplot(1, 2, 1)
-    plt.plot(data['time (hours)'], data['rep1'], 'o', color='orange')
-    plt.plot(data['time (hours)'], data['rep2'], 'o', color='blue')
-    plt.plot(data['time (hours)'], data['rep3'], 'o', color='green')
+    plt.plot(data['time (hours)'], data['rep1'], 'o', color='black')
+    plt.plot(data['time (hours)'], data['rep2'], 'o', color='black')
+    plt.plot(data['time (hours)'], data['rep3'], 'o', color='black')
     plt.xlabel('Time (hrs)')
-    plt.ylabel('Total cells')
+    plt.ylabel('Live cells')
     plt.yscale('log')
     plt.ylim(1e5, 1e7)
     plt.xlim(0, 20)
 
     plt.subplot(1, 2, 2)
-    plt.plot(death_data['time (hours)'], death_data['rep1'], 'o', color='orange')
-    plt.plot(death_data['time (hours)'], death_data['rep2'], 'o', color='blue')
-    plt.plot(death_data['time (hours)'], death_data['rep3'], 'o', color='green')
+    plt.plot(death_data['time (hours)'], death_data['rep1'], 'o', color='black')
+    plt.plot(death_data['time (hours)'], death_data['rep2'], 'o', color='black')
+    plt.plot(death_data['time (hours)'], death_data['rep3'], 'o', color='black')
     #plt.xlabel(death_data.columns[0])
     plt.xlabel('Time (hrs)')
     plt.ylabel('Dead cells')
