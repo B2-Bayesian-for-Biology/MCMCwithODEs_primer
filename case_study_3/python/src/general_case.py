@@ -127,7 +127,7 @@ if __name__ == "__main__":
     data = dataset.head(10)
     death_data = dataset.tail(10)
     
-    file_path = '../res/general_case_chain.nc'
+    file_path = '../res/general_case_trace_v0.nc'
     # Build and run model
     model = build_pymc_model(dataset)
     
@@ -182,33 +182,49 @@ if __name__ == "__main__":
         dead = sol[:, 2]
         total = live + dead
 
-        plt.subplot(1, 2, 1)
-        plt.plot(time_finer, total, '-', color='gray', alpha=0.1)
+        plt.subplot(1,3,1)
+        plt.plot(time_finer, sol[:,0], '-', color='deepskyblue', alpha=0.1)
 
-        plt.subplot(1, 2, 2)
-        plt.plot(time_finer, dead, '-', color='gray', alpha=0.1)
+        plt.subplot(1, 3, 2)
+        plt.plot(time_finer, total, '-', color='deepskyblue', alpha=0.1)
+
+        plt.subplot(1, 3, 3)
+        plt.plot(time_finer, dead, '-', color='deepskyblue', alpha=0.1)
+
+
+    plt.subplot(1, 3, 1)
+    plt.xlabel('Time (days)', fontsize=14)
+    plt.ylabel('Nutrients', fontsize=14)
+    plt.xlim(0, 20)
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
 
     # Add data points on top
-    plt.subplot(1, 2, 1)
+    plt.subplot(1, 3, 2)
     plt.plot(data['time (hours)'], data['rep1'], 'o', color='black')
     plt.plot(data['time (hours)'], data['rep2'], 'o', color='black')
     plt.plot(data['time (hours)'], data['rep3'], 'o', color='black')
-    plt.xlabel('Time (hrs)')
-    plt.ylabel('Live cells')
+    plt.xlabel('Time (days)',fontsize=14)
+    plt.ylabel('Total cells',fontsize=14)
     plt.yscale('log')
     plt.ylim(1e5, 1e7)
     plt.xlim(0, 20)
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
 
-    plt.subplot(1, 2, 2)
+    plt.subplot(1, 3, 3)
     plt.plot(death_data['time (hours)'], death_data['rep1'], 'o', color='black')
     plt.plot(death_data['time (hours)'], death_data['rep2'], 'o', color='black')
     plt.plot(death_data['time (hours)'], death_data['rep3'], 'o', color='black')
     #plt.xlabel(death_data.columns[0])
-    plt.xlabel('Time (hrs)')
-    plt.ylabel('Dead cells')
+    plt.xlabel('Time (days)',fontsize=14)
+    plt.ylabel('Dead cells',fontsize=14)
     plt.yscale('log')
     plt.ylim(1e5, 1e7)
     plt.xlim(0, 20)
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
+
 
     plt.tight_layout()
     plt.show()

@@ -2,6 +2,7 @@ import malthusian_normal_plotting as gp
 import death_normal_plotting as dp
 import matplotlib.pyplot as plt
 import arviz as az
+import seaborn as sns
 
 # Set up figure
 f, ax = plt.subplots(2, 2, figsize=[10, 10])
@@ -41,7 +42,10 @@ ax[2].tick_params(axis='both', labelsize=10)  # Change tick size for ax[2]
 
 
 # Scatter plot of growth vs death rates
-ax[3].scatter(ddf.mum, ddf.delta, s=10, alpha=0.3)
+ax[3].scatter(ddf.mum, ddf.delta, s=10, alpha=0.3, color='red')
+# Pair plot of covariance of ddf.mum and ddf.delta
+#sns.pairplot(ddf[['mum', 'delta']], diag_kind='kde')
+
 ax[3].set_title('Joint posterior: growth vs death')
 
 # Subplot labels
@@ -59,6 +63,6 @@ for i in range(len(ax)):
 
 
 # Save figure
-f.savefig('../figures/main_text_fig2.png', bbox_inches='tight', dpi=600)
+f.savefig('../figures/main_text_fig2_v2.png', bbox_inches='tight', dpi=600)
 plt.close(f)
 
