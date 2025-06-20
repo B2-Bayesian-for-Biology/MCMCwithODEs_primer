@@ -6,11 +6,22 @@ import pymc as pm
 import arviz as az
 from pytensor.compile.ops import as_op
 import pytensor.tensor as pt
+import os
+import sys
+
+
+# Get path to MCMCwithODEs_primer (2 levels up)
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+sys.path.insert(0, project_root)
+
+# Now this works:
+from utils import plot_trace, plot_convergence, plot_posterior_pairs  # because __init__.py already re-exports it
 
 # Define the differential equation system
 def cells_ode(y, t, params):
     mum = params[0]
     return [mum * y[0]]
+
 
 # Build and return a PyMC model
 def build_pymc_model(time, obs):
@@ -22,6 +33,8 @@ def build_pymc_model(time, obs):
         n_theta=1,
         t0=0
     )
+
+
 
     with pm.Model() as model:
         # Priors
@@ -54,8 +67,66 @@ if __name__ == "__main__":
 
     # Build and run model
     model = build_pymc_model(time, obs)
-    trace = run_inference(model)
 
-    # save trace plots to csv
-    az.to_netcdf(trace, '../data/normal_growth_trace.nc')
+
+    file_path = '../data/normal_growth_trace.nc'
+    
+    if not os.path.exists(file_path):
+        print(f"Running model and saving trace to {file_path}")
+        trace = run_inference(model)
+        az.to_netcdf(trace, file_path)
+    else:
+        print(f"{file_path} already exists. Skipping model run.")
+
+
+    # Plotting part
+    trace = az.from_netcdf(file_path)
+
+    '''
+    
+    plot_trace(
+    trace=trace,
+    model=model,
+    var_names_map={'N0':'Initial density/ml','mum': 'Growth Rate μ', 'sigma': 'Std Dev σ'},
+    var_order=['mum','N0','sigma'],
+    fontname='Arial',
+    fontsize=12,
+    num_prior_samples=2000
+    #save_path='../figures/normal_growth_chains.png'
+    )
+    
+
+    plot_posterior_pairs(
+    trace,
+    var_names=["mum", "N0", "sigma"],
+    var_names_map={"mum": "Growth Rate μ", "N0": "Initial density/ml", "sigma": "Std Dev σ"},
+    var_order=["mum", "N0", "sigma"],
+    plot_kind="kde",
+    fontname="Arial",
+    fontsize=12,
+    figsize=(10, 10),
+    hspace=0.5,
+    wspace=0.5
+    )
+    '''
+    
+   
+    plot_convergence(
+    trace,
+    var_names=["mum", "N0", "sigma"],
+    var_order=["mum", "N0", "sigma"],
+    var_names_map={"mum": "Growth Rate μ", "N0": "Initial density/ml", "sigma": "Std Dev σ"},
+    thin=1,
+    fontname="Arial",
+    fontsize=15,
+    max_lag=80,
+    show_geweke=False,
+    hspace=0.8,
+    combine_chains = False,
+    save_path="../figures/normal_growth_convergence.png"
+    )
+
+
+    #plot_autocorrelation(trace)#, save_path='../figures/general_autocorrelation.png')
+
 

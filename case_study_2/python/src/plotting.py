@@ -31,6 +31,76 @@ def plot_trace(trace, save_path=None):
 
 
 
+def plot_trace2(
+    trace,
+    save_path=None,
+    var_names_map=None,
+    var_order=None,
+    fontname='DejaVu Sans',
+    fontsize=10,
+    prior_trace=None,
+    prior_color='gray'
+):
+    """
+    Enhanced trace plot with customization options.
+
+    Parameters:
+    - trace: ArviZ InferenceData object
+    - save_path: Path to save the plot (optional)
+    - var_names_map: dict mapping original variable names to new labels
+    - var_order: list specifying the order of variables to plot
+    - fontname: font name for labels
+    - fontsize: font size for labels
+    - prior_trace: ArviZ InferenceData object with prior samples
+    - prior_color: color for prior distribution overlay
+    """
+    # Determine the variables to plot
+    var_names = trace.posterior.data_vars.keys()
+    if var_order:
+        var_names = [v for v in var_order if v in var_names]
+    else:
+        var_names = list(var_names)
+
+    # Apply custom variable names if given
+    labels = [var_names_map.get(v, v) if var_names_map else v for v in var_names]
+
+    # Plot trace
+    axes = az.plot_trace(trace, var_names=var_names, figsize=(12, len(var_names)*2), show=True)
+
+    chain_colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red']
+
+    for i, ax_row in enumerate(axes):
+        for j, ax in enumerate(ax_row):
+            lines = ax.get_lines()
+            for k, line in enumerate(lines):
+                line.set_color(chain_colors[k % len(chain_colors)])
+            
+            # Set custom font and label
+            if j == 0 and i < len(labels):
+                ax.set_title(labels[i], fontname=fontname, fontsize=fontsize)
+
+            # Overlay prior, if available
+            if prior_trace and j == 1:  # Histogram plot
+                var_name = var_names[i]
+                if var_name in prior_trace.prior.data_vars:
+                    prior_vals = prior_trace.prior[var_name].values.flatten()
+                    ax.hist(
+                        prior_vals,
+                        bins=30,
+                        density=True,
+                        histtype='stepfilled',
+                        alpha=0.3,
+                        color=prior_color,
+                        label='Prior'
+                    )
+                    ax.legend(fontsize=fontsize-2)
+
+    plt.tight_layout()
+    if save_path:
+        plt.savefig(save_path)
+    plt.show()
+
+
 
 ############################################
 # posteriors
