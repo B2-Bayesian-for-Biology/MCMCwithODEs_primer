@@ -5,6 +5,8 @@ import pymc as pm
 import numpy as np
 from scipy.stats import gaussian_kde
 import sympy as sp
+from tqdm import tqdm
+
 
 '''
 This is preliminary. I will make it more general later.
@@ -14,8 +16,6 @@ This is preliminary. I will make it more general later.
 ########################################
 ############# Trace ####################
 ########################################
-
-
 
 def plot_trace(
     trace,
@@ -274,43 +274,49 @@ def plot_convergence(
         g = geweke[var] if show_geweke and var in geweke else None
         print(f"{var}: R-hat={r:.3f} | ESS={e:.1f}" + (f" | Geweke z={g[-1]:.2f}" if g is not None else ""))
 
-    if show_autocorr:
-        # Plot autocorrelations
-        fig, axes = plt.subplots(len(selected_vars), 1, figsize=(8, 2.5 * len(selected_vars)))
-        if len(selected_vars) == 1:
-            axes = [axes]
+        if show_autocorr:
+            # Calculate grid size for square-ish layout
+            n_vars = len(selected_vars)
+            ncols = int(np.ceil(np.sqrt(n_vars)))
+            nrows = int(np.ceil(n_vars / ncols))
 
-        for i, var in enumerate(selected_vars):
-            ax = axes[i]
-            az.plot_autocorr(trace, var_names=[var], max_lag=max_lag, ax=ax, combined=combine_chains)
-            label = labels[i]
-            ax.set_title(f"{label}", fontname=fontname, fontsize=fontsize)
-            ax.set_xlabel("Lag", fontsize=fontsize)
-            ax.set_ylabel("Autocorrelation", fontsize=fontsize)
-            ax.tick_params(labelsize=fontsize)
+            fig, axes = plt.subplots(nrows, ncols, figsize=(4 * ncols, 3 * nrows))
+            axes = np.array(axes).reshape(-1)  # Flatten for easy indexing
 
-            # Annotate diagnostics
-            text = ""
-            if show_rhat:
-                text += f"R={rhat[var].values:.3f}  "
-            if show_ess:
-                text += f"ESS={ess[var].values:.1f}  "
-            if show_geweke and var in geweke:
-                text += f"Geweke z={geweke[var][-1]:.2f}"
-            ax.annotate(text.strip(), xy=(0.99, 0.95), xycoords="axes fraction",
-                        ha="right", va="top", fontsize=fontsize - 1,
-                        bbox=dict(boxstyle="round", facecolor="white", alpha=0.7))
-        # Adjust layout spacing
-        plt.subplots_adjust(hspace=hspace, wspace=wspace)
+            for i, var in enumerate(selected_vars):
+                ax = axes[i]
+                az.plot_autocorr(trace, var_names=[var], max_lag=max_lag, ax=ax, combined=combine_chains)
+                label = labels[i]
+                ax.set_title(f"{label}", fontname=fontname, fontsize=fontsize)
+                ax.set_xlabel("Lag", fontsize=fontsize)
+                ax.set_ylabel("Autocorrelation", fontsize=fontsize)
+                ax.tick_params(labelsize=fontsize)
 
-        #plt.tight_layout(h_pad=1.2)
+                # Annotate diagnostics
+                text = ""
+                if show_rhat:
+                    text += f"R={rhat[var].values:.3f}  "
+                if show_ess:
+                    text += f"ESS={ess[var].values:.1f}  "
+                if show_geweke and var in geweke:
+                    text += f"Geweke z={geweke[var][-1]:.2f}"
+                ax.annotate(text.strip(), xy=(0.99, 0.95), xycoords="axes fraction",
+                            ha="right", va="top", fontsize=fontsize - 1,
+                            bbox=dict(boxstyle="round", facecolor="white", alpha=0.7))
 
-        if save_path:
-            plt.savefig(save_path, bbox_inches='tight')
+            # Hide any unused subplots
+            for j in range(i + 1, nrows * ncols):
+                fig.delaxes(axes[j])
+
+            # Adjust layout spacing
+            plt.subplots_adjust(hspace=hspace, wspace=wspace)
+
+            if save_path:
+                plt.savefig(save_path, bbox_inches='tight')
 
         plt.show()
 
-    
+
     diagnostics = {}
     if show_rhat:
         diagnostics['rhat'] = rhat
@@ -322,98 +328,139 @@ def plot_convergence(
     return diagnostics
 
 
-def posterior_dynamics():
-    raise NotImplementedError("This function is not yet implemented. Please implement the dynamics plotting logic.")
+
+### dynamics ###
 
 
-
-def plot_dynamics(model, trace, y_vector, time, n_plot, save_path=None):
-
-    posterior_samples = trace.posterior.stack(draws=("chain", "draw"))
-    posterior_array = np.vstack([
-    posterior_samples["$r$ (growth rate)"].values,
-    posterior_samples["$K$ (carrying capacity)"].values,
-    posterior_samples["$\delta$ (death rate)"].values,
-    posterior_samples["$P_0$ (init. live)"].values,
-    posterior_samples["$D_0$ (init. dead)"].values
-    ]).T  # Shape: (n_samples, 5)
-
-
-
-
-def run_posterior_predictive_checks(model, trace, var_names=None, plot=True, savepath=None):
+def posterior_dynamics(
+    dataset,
+    trace,
+    model,
+    num_variables,
+    n_plots=100,
+    burn_in=0,
+    ode_fn=None,
+    ode2data_fn=None,
+    save_path=None,
+    var_properties=None,
+    figsize=(10, 4),
+    fontname='DejaVu Sans',
+    fontsize=12,
+    line_width=2,
+    alpha=0.8,
+    show=True,
+    sharex=False,
+    sharey=False,
+    suptitle=None,
+    verbose=False
+):
     """
-    Run posterior predictive checks on a PyMC model.
+    Plot dynamics for each variable with replicates and posterior predictive ODE trajectories.
 
     Parameters:
-    - model: a PyMC model
-    - trace: inference data from pm.sample (with return_inferencedata=True)
-    - var_names: list of observed variable names to sample (e.g., ["Y_live", "Y_dead"])
-    - plot: whether to plot the posterior predictive checks
-    - savepath: if provided, saves the plot to the given file path
+        dataset: dict of {variable name: list of dicts with 'time' and 'values'}
+        trace: PyMC InferenceData object
+        model: PyMC Model object (used to extract free_RVs)
+        num_variables: number of ODE state variables
+        n_plots: number of posterior samples to use
+        burn_in: number of burn-in samples to skip
+        ode_fn: function (y, t, params) -> dydt
+        ode2data_fn: function (solution) -> dict of derived outputs
+        save_path: if provided, path to save figure
+        var_properties: dict of customization per variable
+        figsize: size per subplot
+        show: whether to show the plot
+        suptitle: figure-wide title
+        verbose: whether to print debug info
     """
-    with model:
-        ppc = pm.sample_posterior_predictive(trace, var_names=var_names)
 
-    if plot and var_names is not None:
-        for var in var_names:
-            obs_data = trace.observed_data[var].values
-            pred_samples = ppc.posterior_predictive[var].values  # <-- fixed here
+    # Safety checks
+    if trace is None or model is None:
+        raise ValueError("Trace and model must be provided.")
+    if dataset is None or not isinstance(dataset, dict):
+        raise ValueError("Dataset must be a dict of {var_name: list of replicates}")
+    if ode_fn is None or ode2data_fn is None:
+        raise ValueError("ODE function and output extractor must be provided.")
 
-            plt.figure(figsize=(8, 5))
-            plt.plot(obs_data, 'o-', label="Observed", color="black")
-            n_samples = min(50, len(pred_samples))
-            for s in pred_samples[np.random.choice(len(pred_samples), size=n_samples, replace=False)]:
-                plt.plot(s, alpha=0.1, color="blue")
-            plt.title(f"Posterior Predictive Check: {var}")
-            plt.xlabel("Time Index")
-            plt.ylabel("log(cell count)")
-            plt.legend()
-            plt.grid(True)
+    n_chains = trace.posterior.sizes["chain"]
+    n_draws_per_chain = trace.posterior.sizes["draw"]
+    total_samples = n_chains * n_draws_per_chain
 
-            if savepath:
-                plt.savefig(f"{savepath}_{var}.png")
-            else:
-                plt.show()
+    if burn_in >= total_samples:
+        raise ValueError("Burn-in exceeds total number of samples.")
+    if n_plots > (total_samples - burn_in):
+        raise ValueError("n_plots exceeds available post-burn-in samples.")
 
-    return ppc
+    # Get posterior samples as stacked draws
+    posterior_samples = trace.posterior.stack(draws=("chain", "draw"))
+    var_names = [v.name for v in model.free_RVs]
 
+    # Assume 1D parameter arrays (exclude multi-dimensional parameters)
+    param_matrix = np.vstack([
+        posterior_samples[v].values
+        for v in var_names
+        if v in posterior_samples and posterior_samples[v].values.ndim == 1
+    ]).T
 
+    # Plotting setup
+    n_vars = len(dataset)
+    fig, axes = plt.subplots(n_vars, 1, figsize=(figsize[0], figsize[1]*n_vars), sharex=sharex, sharey=sharey)
+    if n_vars == 1:
+        axes = [axes]
 
+    # Get common time range across replicates
+    all_times = [t for data in dataset.values() for rep in data for t in rep['time']]
+    t_min, t_max = min(all_times), max(all_times)
+    time_finer = np.linspace(t_min, t_max, 200)
 
-'''
-def plot_trace2(trace, save_path=None):
-    axes = az.plot_trace(trace)
-    chain_colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red']
-    for ax_row in axes:
-        for ax in ax_row:
-            lines = ax.get_lines()
-            for i, line in enumerate(lines):
-                line.set_color(chain_colors[i % len(chain_colors)])
-    plt.tight_layout()
+    for ax, (var_name, replicates) in zip(axes, dataset.items()):
+        props = var_properties.get(var_name, {}) if var_properties else {}
+        label = props.get("label", var_name)
+        color = props.get("color", None)
+        ylabel = props.get("ylabel", label)
+        sol_key = props.get("sol_key", var_name.lower().replace(" ", "_"))
+
+        # Posterior predictive ODE simulations
+        for i in range(n_plots):
+            theta = param_matrix[burn_in + i]
+
+            y0 = theta[-num_variables*2:-num_variables]  # assume last 2*num_variables are [y0, bounds]
+            ode_params = theta[:-num_variables*2]
+
+            sol = odeint(ode_fn, y0, t=time_finer, args=(ode_params,), rtol=1e-6, atol=1e-6)
+            sol_outputs = ode2data_fn(sol)
+
+            if sol_key not in sol_outputs:
+                raise KeyError(f"sol_key '{sol_key}' not found in ode2data_fn output.")
+
+            ax.plot(time_finer, sol_outputs[sol_key], '-', color='gray', alpha=0.1)
+
+        # Replicate data
+        for i, rep in enumerate(replicates):
+            time = rep["time"]
+            values = rep["values"]
+            rep_label = f"{label} (rep {i+1})" if len(replicates) > 1 else label
+            ax.plot(time, values, label=rep_label, color=color, lw=line_width, alpha=alpha, 
+                    marker='o', markersize=4, linestyle='None')
+
+        ax.set_title(label, fontsize=fontsize, fontname=fontname)
+        ax.set_ylabel(ylabel, fontsize=fontsize, fontname=fontname)
+        ax.set_xlabel("Time", fontsize=fontsize, fontname=fontname)
+        ax.tick_params(labelsize=fontsize)
+        if len(replicates) > 1:
+            ax.legend(fontsize=fontsize - 2)
+
+    if suptitle:
+        fig.suptitle(suptitle, fontsize=fontsize+2, fontname=fontname)
+    fig.tight_layout()
+
     if save_path:
-        plt.savefig(save_path)
-    plt.show()
+        plt.savefig(save_path, bbox_inches='tight')
+    if show:
+        plt.show()
+
+    return fig, axes
 
 
 
 
-def plot_posterior(trace, save_path=None):
-    
-    az.plot_pair(trace, kind='kde', divergences=True, marginals=True)
-    if save_path:
-        plt.savefig(save_path)
-    plt.show()
-
-
-
-def plot_autocorrelation(trace, save_path=None):
-    rhat = az.rhat(trace)
-    autocorr = az.plot_autocorr(trace)
-    print(f'Rhat:\n{rhat}\n')
-    if save_path:
-        plt.savefig(save_path)
-    plt.show()
-
-    
-'''

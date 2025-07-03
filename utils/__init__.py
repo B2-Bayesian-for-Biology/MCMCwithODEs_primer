@@ -1,1 +1,1 @@
-from .plot_utils import plot_trace, plot_posterior_pairs, plot_convergence
+from .plot_utils import plot_trace, plot_posterior_pairs, plot_convergence, posterior_dynamics, posterior_dynamics2,posterior_dynamics3 

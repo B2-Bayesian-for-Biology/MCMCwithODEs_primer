@@ -11,6 +11,12 @@ from pytensor.compile.ops import as_op
 import logging
 import os
 from plotting import *
+import sys
+# Get path to MCMCwithODEs_primer (3 levels up)
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+sys.path.insert(0, project_root)
+from utils import plot_trace, plot_convergence, plot_posterior_pairs, posterior_dynamics2  # because __init__.py already re-exports it
+
 
 ## differential equation and solvers
 
@@ -27,7 +33,12 @@ def logistic_growth_death(y, t, params):
     dydt[1] = delta * P
     return dydt
 
-
+def ode_solution2data(solution):
+    live_solution = solution[:,0]
+    dead_solution = solution[:,1]
+    
+    total_cells_solution = live_solution + dead_solution
+    return total_cells_solution, dead_solution
 
 # Build and return a PyMC model
 def build_pymc_model(dataset):
@@ -112,6 +123,68 @@ if __name__ == "__main__":
 
     # Plotting part
     trace = az.from_netcdf(file_path)
+
+
+    ## dataset
+    dataset_postprocessing = {
+    "Total cells": [
+            {"time": data['time (hours)'], "values":  data['rep1']},  # replicate 1
+            {"time": data['time (hours)'], "values":  data['rep2']},  # replicate 2
+            {"time": data['time (hours)'], "values":  data['rep3']},  # replicate 3
+        ],
+    "Dead cells": [
+            {"time": death_data['time (hours)'], "values":  death_data['rep1']},  # replicate 1
+            {"time": death_data['time (hours)'], "values":  death_data['rep2']},  # replicate 2
+            {"time": death_data['time (hours)'], "values":  death_data['rep3']},  # replicate 3
+        ]
+    }
+
+    plot_trace(
+    trace=trace,
+    model=model,
+    #var_names_map={'N0':'Initial density/ml','mum': 'Growth Rate μ', 'sigma': 'Std Dev σ'},
+    #var_order=['mum','N0','sigma'],
+    fontname='Arial',
+    fontsize=12,
+    num_prior_samples=2000
+    #save_path='../figures/normal_growth_chains.png'
+    )
+    
+
+    plot_posterior_pairs(
+    trace,
+    #var_names=["mum", "N0", "sigma"],
+    #var_names_map={"mum": "Growth Rate μ", "N0": "Initial density/ml", "sigma": "Std Dev σ"},
+    #var_order=["mum", "N0", "sigma"],
+    plot_kind="kde",
+    fontname="Arial",
+    fontsize=12,
+    figsize=(10, 10),
+    hspace=0.5,
+    wspace=0.5
+    )
+   
+    
+   
+    plot_convergence(
+    trace,
+    #var_names=["mum", "N0", "sigma"],
+    #var_order=["mum", "N0", "sigma"],
+    #var_names_map={"mum": "Growth Rate μ", "N0": "Initial density/ml", "sigma": "Std Dev σ"},
+    thin=1,
+    fontname="Arial",
+    fontsize=15,
+    max_lag=80,
+    show_geweke=False,
+    hspace=0.8,
+    combine_chains = False,
+    save_path="../figures/normal_growth_convergence.png"
+    )
+
+    
+    
+    
+    
     #plot_trace(trace, save_path='../figures/logistic_growth_death_trace.png')
     #plot_posterior(trace, save_path='../figures/logistic_growth_death_posterior.png')
     #plot_autocorrelation(trace, save_path='../figures/logistic_growth_death_autocorrelation.png')
@@ -125,7 +198,7 @@ if __name__ == "__main__":
     
 
     ############## To be optimized ##############
-
+    
     # Get posterior samples as a NumPy array
     posterior_samples = trace.posterior.stack(draws=("chain", "draw"))
     posterior_array = np.vstack([
@@ -185,6 +258,35 @@ if __name__ == "__main__":
 
 
 '''
+
+
+posterior_dynamics2(
+    dataset_postprocessing,
+    model=model,
+    time_vec=np.linspace(data['time (hours)'].values[0], data['time (hours)'].values[-1], 100),
+    trace=trace,
+    ode_fn=logistic_growth_death,
+    ode_var_names=["N0", "mum"],
+    ode_state_count=1,
+    num_lines=100,
+    var_properties={
+        "Total Cells": {
+            "label": "Cells",
+            "color": "tab:red",
+            "ylabel": "Cells/mL"
+        },
+        "Dead Cells": {
+            "label": "Dead Cells",
+            "color": "tab:blue",
+            "ylabel": "Cells/mL"
+        }
+    },
+    fontname="Arial",
+    fontsize=12,
+    line_width=2.5,
+    figsize=(8, 3),
+    suptitle="Cell Dynamics Over Time"
+)
 
 # Posterior predictive checks
 with model:
