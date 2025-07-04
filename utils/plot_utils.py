@@ -26,7 +26,10 @@ def plot_trace(
     fontname='DejaVu Sans',
     fontsize=10,
     prior_color='black',
-    num_prior_samples=500
+    num_prior_samples=500,
+    figsize=None,
+    hspace=0.5, 
+    wspace=0.3
 ):
     """
     Plot trace with variable renaming, ordering, font options, and prior overlay.
@@ -117,7 +120,7 @@ def plot_trace(
                     
     
     # Fix layout (less aggressive than tight_layout)
-    plt.subplots_adjust(hspace=0.5, wspace=0.3)
+    plt.subplots_adjust(hspace=hspace, wspace=wspace)
     if save_path:
         plt.savefig(save_path)
     plt.show()
@@ -134,9 +137,10 @@ def plot_posterior_pairs(
     var_names_map=None,
     var_order=None,
     save_path=None,
+    scaling_factor=2.5,
     fontname='DejaVu Sans',
     fontsize=10,
-    figsize=(8, 8),
+    figsize=(10, 10),
     plot_kind='kde',  # or 'scatter'
     divergences=True,
     marginals=True,
@@ -161,6 +165,10 @@ def plot_posterior_pairs(
     - hspace, wspace: control subplot spacing
     """
 
+    if figsize is None:
+        figsize = (scaling_factor * len(selected_vars), scaling_factor * len(selected_vars))
+
+
     # Get full list of variable names
     available_vars = list(trace.posterior.data_vars)
 
@@ -176,7 +184,8 @@ def plot_posterior_pairs(
     # Apply variable renaming for plotting
     rename_dict = {v: var_names_map.get(v, v) if var_names_map else v for v in selected_vars}
 
-    # Actually plot
+    
+    
     g = az.plot_pair(
         trace,
         var_names=selected_vars,
@@ -185,6 +194,8 @@ def plot_posterior_pairs(
         marginals=marginals,
         figsize=figsize
     )
+
+    
 
     # Style each subplot
     for ax in g.flatten():
@@ -202,6 +213,11 @@ def plot_posterior_pairs(
                 ax.set_ylabel(rename_dict[ylabel], fontname=fontname, fontsize=fontsize)
 
     # Adjust layout spacing
+    try:
+        plt.tight_layout()
+    except Exception:
+        pass  # in case it's already tightly controlled
+    # Additional spacing if needed
     plt.subplots_adjust(hspace=hspace, wspace=wspace)
 
     # Save or show
@@ -230,7 +246,8 @@ def plot_convergence(
     combine_chains=True,
     max_lag=100,
     hspace=1,
-    wspace=1
+    wspace=1,
+    figsize=None
 ):
     """
     Plot convergence diagnostics with customization.
@@ -280,7 +297,10 @@ def plot_convergence(
             ncols = int(np.ceil(np.sqrt(n_vars)))
             nrows = int(np.ceil(n_vars / ncols))
 
-            fig, axes = plt.subplots(nrows, ncols, figsize=(4 * ncols, 3 * nrows))
+            if figsize is None:
+                figsize = (4 * ncols, 3 * nrows)
+
+            fig, axes = plt.subplots(nrows, ncols, figsize=figsize)
             axes = np.array(axes).reshape(-1)  # Flatten for easy indexing
 
             for i, var in enumerate(selected_vars):
@@ -295,14 +315,21 @@ def plot_convergence(
                 # Annotate diagnostics
                 text = ""
                 if show_rhat:
-                    text += f"R={rhat[var].values:.3f}  "
+                    text += f"R={rhat[var].values:.3f} \n "
                 if show_ess:
-                    text += f"ESS={ess[var].values:.1f}  "
+                    text += f"ESS={ess[var].values:.1f} \n "
                 if show_geweke and var in geweke:
                     text += f"Geweke z={geweke[var][-1]:.2f}"
-                ax.annotate(text.strip(), xy=(0.99, 0.95), xycoords="axes fraction",
-                            ha="right", va="top", fontsize=fontsize - 1,
-                            bbox=dict(boxstyle="round", facecolor="white", alpha=0.7))
+                ax.annotate(
+                text.strip(),
+                xy=(0.5, 0.9),  # was 0.95 — move it lower to avoid overlap with title
+                xycoords="axes fraction",
+                ha="center",
+                va="top",
+                fontsize=fontsize - 1,
+                bbox=dict(boxstyle="round", facecolor="white", alpha=0.7)
+                )
+                            
 
             # Hide any unused subplots
             for j in range(i + 1, nrows * ncols):
@@ -314,7 +341,7 @@ def plot_convergence(
             if save_path:
                 plt.savefig(save_path, bbox_inches='tight')
 
-        plt.show()
+    
 
 
     diagnostics = {}
@@ -337,13 +364,14 @@ def posterior_dynamics(
     trace,
     model,
     num_variables,
+    num_sigma = None,
     n_plots=100,
     burn_in=0,
     ode_fn=None,
     ode2data_fn=None,
     save_path=None,
     var_properties=None,
-    figsize=(10, 4),
+    figsize=(5, 5),
     fontname='DejaVu Sans',
     fontsize=12,
     line_width=2,
@@ -352,6 +380,8 @@ def posterior_dynamics(
     sharex=False,
     sharey=False,
     suptitle=None,
+    fig_align = 'horizontal',
+    color_lines='grey',
     verbose=False
 ):
     """
@@ -391,6 +421,10 @@ def posterior_dynamics(
     if n_plots > (total_samples - burn_in):
         raise ValueError("n_plots exceeds available post-burn-in samples.")
 
+    # fixing num_sigma
+    if num_sigma is None:
+        num_sigma = num_variables
+
     # Get posterior samples as stacked draws
     posterior_samples = trace.posterior.stack(draws=("chain", "draw"))
     var_names = [v.name for v in model.free_RVs]
@@ -404,7 +438,10 @@ def posterior_dynamics(
 
     # Plotting setup
     n_vars = len(dataset)
-    fig, axes = plt.subplots(n_vars, 1, figsize=(figsize[0], figsize[1]*n_vars), sharex=sharex, sharey=sharey)
+    if fig_align == 'horizontal':
+        fig, axes = plt.subplots( 1, n_vars, figsize=(figsize[0]*n_vars, figsize[1]), sharex=sharex, sharey=sharey)
+    else:   
+        fig, axes = plt.subplots(n_vars, 1, figsize=(figsize[0], figsize[1]*n_vars), sharex=sharex, sharey=sharey)
     if n_vars == 1:
         axes = [axes]
 
@@ -418,14 +455,18 @@ def posterior_dynamics(
         label = props.get("label", var_name)
         color = props.get("color", None)
         ylabel = props.get("ylabel", label)
+        xlabel = props.get("xlabel", label)
         sol_key = props.get("sol_key", var_name.lower().replace(" ", "_"))
+        is_log = props.get("log", False)
+        if is_log:
+            ax.set_yscale("log")
 
         # Posterior predictive ODE simulations
         for i in range(n_plots):
             theta = param_matrix[burn_in + i]
 
-            y0 = theta[-num_variables*2:-num_variables]  # assume last 2*num_variables are [y0, bounds]
-            ode_params = theta[:-num_variables*2]
+            y0 = theta[-num_variables-num_sigma:-num_sigma]  # assume last 2*num_variables are [y0, bounds]
+            ode_params = theta[:-num_variables-num_sigma]  # all but last 2*num_variables
 
             sol = odeint(ode_fn, y0, t=time_finer, args=(ode_params,), rtol=1e-6, atol=1e-6)
             sol_outputs = ode2data_fn(sol)
@@ -433,7 +474,7 @@ def posterior_dynamics(
             if sol_key not in sol_outputs:
                 raise KeyError(f"sol_key '{sol_key}' not found in ode2data_fn output.")
 
-            ax.plot(time_finer, sol_outputs[sol_key], '-', color='gray', alpha=0.1)
+            ax.plot(time_finer, sol_outputs[sol_key], '-', color=color_lines, alpha=0.1)
 
         # Replicate data
         for i, rep in enumerate(replicates):
@@ -445,10 +486,12 @@ def posterior_dynamics(
 
         ax.set_title(label, fontsize=fontsize, fontname=fontname)
         ax.set_ylabel(ylabel, fontsize=fontsize, fontname=fontname)
-        ax.set_xlabel("Time", fontsize=fontsize, fontname=fontname)
+        ax.set_xlabel(xlabel, fontsize=fontsize, fontname=fontname)
         ax.tick_params(labelsize=fontsize)
         if len(replicates) > 1:
             ax.legend(fontsize=fontsize - 2)
+
+        
 
     if suptitle:
         fig.suptitle(suptitle, fontsize=fontsize+2, fontname=fontname)

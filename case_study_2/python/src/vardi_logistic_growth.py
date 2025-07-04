@@ -46,17 +46,16 @@ ehux_d7_dead_density = ehux_d7_death[' Dead percentage ']*ehux_d7_total_density/
 
 ## differential equation and solvers
 
-def logistic_growth_death(y, t, params):
+def logistic_growth(y, t, params):
     # Use indexing instead of unpacking
     P = y[0]
-    D = y[1]
+    
     r = params[0]
     K = params[1]
-    delta = params[2]
 
-    dydt = [0, 0]
-    dydt[0] = r * (1 - P / K) * P - delta * P
-    dydt[1] = delta * P
+    dydt = [0]
+    dydt[0] = r * (1 - P / K) * P 
+    
     return dydt
 
 
@@ -70,23 +69,21 @@ def ode_solution2data(solution):
     Returns:
         dict: keys are output variable names, values are 1D arrays over time
     """
-    live = solution[:, 0]
-    dead = solution[:, 1]
-    total = live + dead
+    
+    total = solution[:, 0]  # Assuming the first column is the total cell count
     return {
-        "total": total,
-        "dead": dead
+        "total": total
     }
 
 # Build and return a PyMC model
-def build_pymc_model(ehux_total_time, ehux_total_density,ehux_dead_time, ehux_dead_density ):
+def build_pymc_model(ehux_total_time, ehux_total_density ):
 
 
     cell_model = pm.ode.DifferentialEquation(
-        func=logistic_growth_death,
+        func=logistic_growth,
         times=ehux_total_time,
-        n_states=2,
-        n_theta=3, # because rest goes in y0 
+        n_states=1,
+        n_theta=2, # because rest goes in y0 
         t0=0
     )
 
@@ -94,27 +91,23 @@ def build_pymc_model(ehux_total_time, ehux_total_density,ehux_dead_time, ehux_de
         # Priors
         r = pm.Uniform(r"$r$ (growth rate)", lower=0.5, upper=1)
         K = pm.Uniform(r"$K$ (carrying capacity)" , lower=1e6, upper=4e7)
-        delta = pm.Uniform(r"$\delta$ (death rate)", lower=0.0, upper=0.15)
         P0 = pm.Uniform(r"$P_0$ (init. live)", lower=1e5, upper=3e5)
-        D0 = pm.Uniform(r"$D_0$ (init. dead)", lower=1e4, upper=7e4)
-
         sigma_live = pm.HalfNormal(r"$\sigma_L$", 3)
-        sigma_dead = pm.HalfNormal(r"$\sigma_D$", 3)
+
 
         # Solve the ODE system
-        y_hat = cell_model(y0=[P0,D0], theta=[r,K,delta])
+        y_hat = cell_model(y0=[P0], theta=[r,K])
         y_hat_sol = ode_solution2data(y_hat)
         # Extract live and dead cell solutions
-        total_solution = y_hat_sol['total']
-        dead_solution = y_hat_sol['dead']
-
+        #total_solution = y_hat_sol['total']
+        total_solution = y_hat_sol['total']  # Match observed shape
+ 
+       
         # pymc multiplies this itself (or additive after taking Log of Likelihood.)
-        pm.Normal("Y_live", mu=pm.math.log(pm.math.clip(total_solution, 1e-8, np.inf)),sigma=sigma_live,
+        pm.Normal("Y_total", mu=pm.math.log(pm.math.clip(total_solution, 1e-8, np.inf)),sigma=sigma_live,
                 observed =  np.log(ehux_total_density))
 
-        pm.Normal("Y_dead", mu=pm.math.log(pm.math.clip(dead_solution, 1e-8, np.inf)),sigma=sigma_dead,
-                observed=np.log(ehux_dead_density))
-
+      
     return model    
 
 
@@ -126,20 +119,17 @@ def run_inference(model, draws=2000, tune=500, chains=3, cores = 3):
 
 if __name__ == "__main__":
 
-    file_path = '../res/vardi_logistic_growth_death_chain.nc'
+    file_path = '../res/vardi_logistic_growth_chain.nc'
     # Build and run model
     
-    model = build_pymc_model(ehux_total_time, ehux_total_density,ehux_dead_time, ehux_dead_density)
+    model = build_pymc_model(ehux_total_time, ehux_total_density)
     
-    # Default to False if not defined
-    run_inference_flag = False
     # Default to False if not defined
     run_inference_flag = False
     plot_trace_flag = False
     plot_convergence_flag = False
     plot_posterior_pairs_flag = False
     plot_dynamics_flag = True
-
 
     try:
         run_inference_flag
@@ -158,14 +148,15 @@ if __name__ == "__main__":
     # Plotting part
     trace = az.from_netcdf(file_path)
 
-    if plot_trace_flag:
+
+    if plot_trace_flag:    
         plot_trace(
         trace=trace,
         model=model,
         fontname='Arial',
         fontsize=12,
-        num_prior_samples=2000,
-        save_path='../figures/vardi_growth_death_chains.png'
+        num_prior_samples=200,
+        save_path='../figures/vardi_logistic_growth_chains.png'
         )
         
     
@@ -178,10 +169,10 @@ if __name__ == "__main__":
         figsize=(20, 10),
         hspace=0.5,
         wspace=0.2,
-        save_path='../figures/vardi_growth_death_posterior.png'
+        save_path='../figures/vardi_logistic_growth_posterior.png'
         )
-   
     
+        
     if plot_convergence_flag:
         plot_convergence(
         trace,
@@ -193,9 +184,9 @@ if __name__ == "__main__":
         hspace=0.8,
         combine_chains = False,
         figsize=(10, 10),
-        save_path="../figures/vardi_growth_death_convergence.png"
+        save_path="../figures/vardi_logistic_growth_convergence.png"
         )
-        
+    
     
 
     
@@ -203,9 +194,6 @@ if __name__ == "__main__":
     dataset_postprocessing = {
     "Total cells": [
             {"time": ehux_total_time, "values":  ehux_total_density},  # replicate 1
-        ],
-    "Dead cells": [
-            {"time": ehux_dead_time, "values": ehux_dead_density},  # replicate 1
         ]
     }
 
@@ -218,16 +206,15 @@ if __name__ == "__main__":
         model=model,
         n_plots=100,
         burn_in=50,
-        num_variables=2,
-        ode_fn=logistic_growth_death,
+        num_variables=1,
+        ode_fn=logistic_growth,
         ode2data_fn=ode_solution2data,
-        save_path="../figures/vardi_growth_death_dynamics.png",
+        save_path="../figures/vardi_logistic_growth_dynamics.png",
         var_properties={
-            "Total cells": {"label": "Total", "color": "black", "ylabel": "Total cell density (/ml)", "xlabel":"Time (days)", "sol_key": "total","log": True},
-            "Dead cells": {"label": "Dead", "color": "black", "ylabel": "Dead cell density (/ml)", "xlabel":"Time (days)", "sol_key": "dead","log": True},
+            "Total cells": {"label": "Total", "color": "black", "ylabel": "Total cell density (/ml)", "xlabel":"Time (days)","sol_key": "total","log": True}
         },
         suptitle="Posterior Predictive Dynamics"
         )
-    
+        
    
     

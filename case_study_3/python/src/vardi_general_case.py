@@ -44,20 +44,23 @@ ehux_dead_density = ehux_death[' Dead percentage '].values*ehux_total_density/10
 ehux_d7_dead_time = ehux_d7_death['Time (days)']
 ehux_d7_dead_density = ehux_d7_death[' Dead percentage ']*ehux_d7_total_density/100
 
+
 ## differential equation and solvers
+def general_case(y, t, params):
 
-def logistic_growth_death(y, t, params):
     # Use indexing instead of unpacking
-    P = y[0]
-    D = y[1]
-    r = params[0]
-    K = params[1]
-    delta = params[2]
+    N, P, D = y[0], y[1], y[2] 
+    mu_max,Ks,Qn,delta = params[0], params[1], params[2], params[3]
 
-    dydt = [0, 0]
-    dydt[0] = r * (1 - P / K) * P - delta * P
-    dydt[1] = delta * P
+    dydt = [0, 0, 0]
+    
+
+    dydt[0] = -Qn*mu_max*N*P*1e6/(N+Ks)
+    dydt[1] = mu_max*N*P/(N+Ks) - delta*P
+    dydt[2] = delta*P
+
     return dydt
+
 
 
 def ode_solution2data(solution):
@@ -70,8 +73,9 @@ def ode_solution2data(solution):
     Returns:
         dict: keys are output variable names, values are 1D arrays over time
     """
-    live = solution[:, 0]
-    dead = solution[:, 1]
+    
+    live = solution[:, 1]
+    dead = solution[:, 2]
     total = live + dead
     return {
         "total": total,
@@ -83,26 +87,32 @@ def build_pymc_model(ehux_total_time, ehux_total_density,ehux_dead_time, ehux_de
 
 
     cell_model = pm.ode.DifferentialEquation(
-        func=logistic_growth_death,
+        func=general_case,
         times=ehux_total_time,
-        n_states=2,
-        n_theta=3, # because rest goes in y0 
+        n_states=3,
+        n_theta=4, # because rest goes in y0 
         t0=0
     )
 
     with pm.Model() as model:
         # Priors
-        r = pm.Uniform(r"$r$ (growth rate)", lower=0.5, upper=1)
-        K = pm.Uniform(r"$K$ (carrying capacity)" , lower=1e6, upper=4e7)
-        delta = pm.Uniform(r"$\delta$ (death rate)", lower=0.0, upper=0.15)
+        mu_max = pm.Uniform(r"$\mu_{max}$",lower=0.2, upper=0.8)  
+        Ks = pm.Uniform(r"$K_s$" , lower=0.05, upper=0.3)
+        Qn = pm.Uniform(r"$Q_n$ (nutrient uptake rate)", lower=5e-10, upper=20e-10)
+        delta = pm.Uniform(r"$\delta$ (death rate)", lower=0.01, upper=0.09)
+        
+        # prior initial conditions
+        N0 = pm.Uniform(r"$N_0$ (nutrients)", lower=3000, upper=6000)  
         P0 = pm.Uniform(r"$P_0$ (init. live)", lower=1e5, upper=3e5)
         D0 = pm.Uniform(r"$D_0$ (init. dead)", lower=1e4, upper=7e4)
-
+        
+        # prior noise parameters
         sigma_live = pm.HalfNormal(r"$\sigma_L$", 3)
         sigma_dead = pm.HalfNormal(r"$\sigma_D$", 3)
 
+        
         # Solve the ODE system
-        y_hat = cell_model(y0=[P0,D0], theta=[r,K,delta])
+        y_hat = cell_model(y0=[N0,P0,D0], theta=[mu_max,Ks,Qn,delta])
         y_hat_sol = ode_solution2data(y_hat)
         # Extract live and dead cell solutions
         total_solution = y_hat_sol['total']
@@ -117,30 +127,33 @@ def build_pymc_model(ehux_total_time, ehux_total_density,ehux_dead_time, ehux_de
 
     return model    
 
-
-def run_inference(model, draws=2000, tune=500, chains=3, cores = 3):
+def run_inference(model, draws=500, tune=500, chains=3, cores=3, threshold_for_slice=5,target_accept=0.95):
     with model:
-        trace = pm.sample(draws=draws, tune=tune, chains=chains, return_inferencedata=True, target_accept=0.95, cores = cores) 
-    return trace
+        # Count number of continuous variables (excluding transformed ones)
+        num_params = len(model.free_RVs)
+        #var_names = [v.name for v in model.free_RVs]
+        
+        if num_params > threshold_for_slice:
+            print(f"Using Slice sampler (parameters: {num_params})")
+            step = pm.Slice()
+        else:
+            print(f"Using NUTS sampler (parameters: {num_params})")
+            step = pm.NUTS(target_accept=target_accept)
+        
+        trace = pm.sample(draws=draws, tune=tune, chains=chains, step=step,
+                          return_inferencedata=True, cores=cores)
 
+    return trace
 
 if __name__ == "__main__":
 
-    file_path = '../res/vardi_logistic_growth_death_chain.nc'
+    file_path = '../res/vardi_general_chain.nc'
     # Build and run model
     
     model = build_pymc_model(ehux_total_time, ehux_total_density,ehux_dead_time, ehux_dead_density)
     
     # Default to False if not defined
-    run_inference_flag = False
-    # Default to False if not defined
-    run_inference_flag = False
-    plot_trace_flag = False
-    plot_convergence_flag = False
-    plot_posterior_pairs_flag = False
-    plot_dynamics_flag = True
-
-
+    run_inference_flag = True
     try:
         run_inference_flag
     except NameError:
@@ -158,44 +171,44 @@ if __name__ == "__main__":
     # Plotting part
     trace = az.from_netcdf(file_path)
 
-    if plot_trace_flag:
-        plot_trace(
-        trace=trace,
-        model=model,
-        fontname='Arial',
-        fontsize=12,
-        num_prior_samples=2000,
-        save_path='../figures/vardi_growth_death_chains.png'
-        )
-        
     
-    if plot_posterior_pairs_flag:
-        plot_posterior_pairs(
-        trace,
-        plot_kind="kde",
-        fontname="Arial",
-        fontsize=10,
-        figsize=(20, 10),
-        hspace=0.5,
-        wspace=0.2,
-        save_path='../figures/vardi_growth_death_posterior.png'
-        )
+    plot_trace(
+    trace=trace,
+    model=model,
+    fontname='Arial',
+    fontsize=12,
+    num_prior_samples=2000,
+    save_path='../figures/vardi_general_chains.png'
+    )
+    
+    
+    
+    plot_posterior_pairs(
+    trace,
+    plot_kind="kde",
+    fontname="Arial",
+    fontsize=10,
+    figsize=(20, 10),
+    hspace=0.5,
+    wspace=0.2,
+    save_path='../figures/vardi_general_posterior.png'
+    )
    
     
-    if plot_convergence_flag:
-        plot_convergence(
-        trace,
-        thin=1,
-        fontname="Arial",
-        fontsize=15,
-        max_lag=80,
-        show_geweke=False,
-        hspace=0.8,
-        combine_chains = False,
-        figsize=(10, 10),
-        save_path="../figures/vardi_growth_death_convergence.png"
-        )
-        
+    
+    plot_convergence(
+    trace,
+    thin=1,
+    fontname="Arial",
+    fontsize=15,
+    max_lag=80,
+    show_geweke=False,
+    hspace=0.8,
+    combine_chains = False,
+    figsize=(10, 10),
+    save_path="../figures/vardi_general_convergence.png"
+    )
+    
     
 
     
@@ -211,23 +224,24 @@ if __name__ == "__main__":
 
 
 
-    if plot_dynamics_flag:
-        posterior_dynamics(
-        dataset=dataset_postprocessing,
-        trace=trace,
-        model=model,
-        n_plots=100,
-        burn_in=50,
-        num_variables=2,
-        ode_fn=logistic_growth_death,
-        ode2data_fn=ode_solution2data,
-        save_path="../figures/vardi_growth_death_dynamics.png",
-        var_properties={
-            "Total cells": {"label": "Total", "color": "black", "ylabel": "Total cell density (/ml)", "xlabel":"Time (days)", "sol_key": "total","log": True},
-            "Dead cells": {"label": "Dead", "color": "black", "ylabel": "Dead cell density (/ml)", "xlabel":"Time (days)", "sol_key": "dead","log": True},
-        },
-        suptitle="Posterior Predictive Dynamics"
-        )
+
+    posterior_dynamics(
+    dataset=dataset_postprocessing,
+    trace=trace,
+    model=model,
+    n_plots=100,
+    burn_in=50,
+    num_variables=3, # including latent
+    num_sigma=2,
+    ode_fn=general_case,
+    ode2data_fn=ode_solution2data,
+    save_path="../figures/vardi_general_dynamics.png",
+    var_properties={
+        "Total cells": {"label": "Total", "color": "black", "ylabel": "Total cell density (/ml)", "sol_key": "total","log": True},
+        "Dead cells": {"label": "Dead", "color": "black", "ylabel": "Dead cell density (/ml)", "sol_key": "dead","log": True},
+    },
+    suptitle="Posterior Predictive Dynamics"
+    )
     
    
     
