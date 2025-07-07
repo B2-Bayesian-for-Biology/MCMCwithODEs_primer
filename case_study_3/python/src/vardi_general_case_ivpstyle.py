@@ -1,3 +1,11 @@
+'''
+Cannot use NUTS with solve_ivp
+NUTS needs gradients
+Use Slice sampler instead or Metropolis.
+'''
+
+
+
 import csv
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -12,8 +20,14 @@ import logging
 import os
 from plotting import *
 import sys
-import os
-import sys
+
+
+import pytensor
+import pytensor.tensor as pt
+from pytensor.graph.op import Op
+from pytensor.graph.basic import Apply
+from scipy.integrate import solve_ivp
+
 
 # Get path to MCMCwithODEs_primer (3 levels up)
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
@@ -45,41 +59,54 @@ ehux_d7_dead_time = ehux_d7_death['Time (days)']
 ehux_d7_dead_density = ehux_d7_death[' Dead percentage ']*ehux_d7_total_density/100
 
 
-## differential equation and solvers
-def general_case(y, t, params):
 
-    # Use indexing instead of unpacking
-    N, P, D = y[0], y[1], y[2] 
-    mu_max,Ks,Qn,delta = params[0], params[1], params[2], params[3]
 
-    dydt = [0, 0, 0]
-    
-    # Convert P from cells/mL to cells/m^3
-    P_m3 = P * 1e6
 
-    # Growth rate: Monod term
+def general_case(t, y, params):
+    N, P, D = y
+    mu_max, Ks, Qn, delta = params
+
+    P_m3 = P * 1e6  # cells/mL → cells/m³
     mu = mu_max * N / (N + Ks)
 
-    # ODEs
-    dydt[0] = -Qn * mu * P_m3              # mmol N m^-3 day^-1
-    dydt[1] = mu * P - delta * P            # cells/mL/day
-    dydt[2] = delta * P                     # cells/mL/day
+    dNdt = -Qn * mu * P_m3
+    dPdt = mu * P - delta * P
+    dDdt = delta * P
 
-    return dydt
-
+    return [dNdt, dPdt, dDdt]
 
 
+
+class SolveIVPWrapper(Op):
+    itypes = [pt.dvector]  # theta + y0
+    otypes = [pt.dmatrix]  # solution: (len(t), 3)
+
+    def __init__(self, times):
+        self.times = times
+
+    def perform(self, node, inputs, outputs):
+        theta_y0, = inputs
+        theta = theta_y0[:4]
+        y0 = theta_y0[4:]
+
+        sol = solve_ivp(
+            fun=lambda t, y: general_case(t, y, theta),
+            t_span=(self.times[0], self.times[-1]),
+            y0=y0,
+            t_eval=self.times,
+            method="LSODA"
+        )
+
+        if not sol.success:
+            raise RuntimeError("ODE solver failed:", sol.message)
+
+        outputs[0][0] = sol.y.T  # shape: (time, 3)
+
+
+
+
+# === Convert solution to observables ===
 def ode_solution2data(solution):
-    """
-    User-defined function to extract and compute useful outputs from the ODE solution.
-    
-    Args:
-        solution (np.ndarray): shape (time_points, num_variables)
-
-    Returns:
-        dict: keys are output variable names, values are 1D arrays over time
-    """
-    
     live = solution[:, 1]
     dead = solution[:, 2]
     total = live + dead
@@ -88,57 +115,38 @@ def ode_solution2data(solution):
         "dead": dead
     }
 
-# Build and return a PyMC model
-def build_pymc_model(ehux_total_time, ehux_total_density,ehux_dead_time, ehux_dead_density ):
 
 
-    cell_model = pm.ode.DifferentialEquation(
-        func=general_case,
-        times=ehux_total_time,
-        n_states=3,
-        n_theta=4, # because rest goes in y0 
-        t0=0
-    )
+def build_pymc_model(times, total_obs, dead_obs):
+    ode_op = SolveIVPWrapper(times)
 
     with pm.Model() as model:
-        # Priors
-        mu_max = pm.Uniform(r"$\mu_{max}$",lower=0.4, upper=0.7)  
-        Ks = pm.Uniform(r"$K_s$" , lower=0.05, upper=0.2)
-        Qn = pm.Uniform(r"$Q_n$ (nutrient uptake rate)", lower=1e-10, upper=7e-10)
-        delta = pm.Uniform(r"$\delta$ (death rate)", lower=0.01, upper=0.09)
-        
-        # prior initial conditions
-        N0 = pm.Uniform(r"$N_0$ (nutrients)", lower=500, upper=2000)  
-        P0 = pm.LogNormal(r"$P_0$ (init. live)", mu=12.2175, sigma=0.1)
-        D0 = pm.LogNormal(r"$D_0$ (init. dead)",  mu=10.2804, sigma=0.1)
+        mu_max = pm.Uniform("mu_max", 0.4, 0.7)
+        Ks = pm.Uniform("Ks", 0.05, 0.2)
+        Qn = pm.Uniform("Qn", 1e-10, 7e-10)
+        delta = pm.Uniform("delta", 0.01, 0.09)
 
-        #P0 = pm.Uniform(r"$P_0$ (init. live)", lower=1e5, upper=3e5)
-        #D0 = pm.Uniform(r"$D_0$ (init. dead)", lower=1e4, upper=7e4)
-        
-        # prior noise parameters
-        sigma_live = pm.HalfNormal(r"$\sigma_L$", 1)
-        sigma_dead = pm.HalfNormal(r"$\sigma_D$", 1)
+        N0 = pm.Uniform("N0", 500, 2000)
+        N0 = pm.Deterministic("N0", 1000 + ((500 / 1.8e-10) * (Qn - 3.2e-10)))
+        P0 = pm.LogNormal("P0", mu=12.2175, sigma=0.1)
+        D0 = pm.LogNormal("D0", mu=10.2804, sigma=0.1)
 
-        
-        # Solve the ODE system
-        y_hat = cell_model(y0=[N0,P0,D0], theta=[mu_max,Ks,Qn,delta])
-        y_hat_sol = ode_solution2data(y_hat)
-        # Extract live and dead cell solutions
-        total_solution = y_hat_sol['total']
-        dead_solution = y_hat_sol['dead']
+        sigma_live = pm.HalfNormal("sigma_live", 1)
+        sigma_dead = pm.HalfNormal("sigma_dead", 1)
 
-        # pymc multiplies this itself (or additive after taking Log of Likelihood.)
-        
-        
-        pm.Normal("Y_live", mu=pm.math.log(pm.math.clip(total_solution, 1e-8, np.inf)),sigma=sigma_live,
-                observed =  np.log(ehux_total_density))
+        # Solve ODE
+        sol = ode_op(pt.stack([mu_max, Ks, Qn, delta, N0, P0, D0]))
 
-        pm.Normal("Y_dead", mu=pm.math.log(pm.math.clip(dead_solution, 1e-8, np.inf)),sigma=sigma_dead,
-               observed=np.log(ehux_dead_density))
+        total = sol[:, 1] + sol[:, 2]
+        dead = sol[:, 2]
 
-    return model    
+        pm.Normal("Y_total", mu=pt.log(total), sigma=sigma_live, observed=np.log(total_obs))
+        pm.Normal("Y_dead", mu=pt.log(dead), sigma=sigma_dead, observed=np.log(dead_obs))
 
-def run_inference(model, draws=500, tune=500, chains=2, cores=2, threshold_for_slice=20,target_accept=0.8):
+    return model
+
+
+def run_inference(model, draws=10000, tune=5000, chains=3, cores=3, threshold_for_slice=5,target_accept=0.9):
     with model:
         # Count number of continuous variables (excluding transformed ones)
         num_params = len(model.free_RVs)
@@ -146,7 +154,8 @@ def run_inference(model, draws=500, tune=500, chains=2, cores=2, threshold_for_s
         
         if num_params > threshold_for_slice:
             print(f"Using Slice sampler (parameters: {num_params})")
-            step = pm.Slice()
+            #step = pm.Slice()
+            step = pm.Metropolis()
         else:
             print(f"Using NUTS sampler (parameters: {num_params})")
             step = pm.NUTS(target_accept=target_accept)
@@ -156,21 +165,26 @@ def run_inference(model, draws=500, tune=500, chains=2, cores=2, threshold_for_s
 
     return trace
 
+
+
+
+
+
+
 if __name__ == "__main__":
 
     file_path = '../res/vardi_general_chain.nc'
     # Build and run model
+    model = build_pymc_model(ehux_total_time, ehux_total_density, ehux_dead_density)
     
-    model = build_pymc_model(ehux_total_time, ehux_total_density,ehux_dead_time, ehux_dead_density)
-    
+
 
     # Default to False if not defined
-    run_inference_flag = False
-    plot_trace_flag = False
-    plot_convergence_flag = False
-    plot_posterior_pairs_flag = False
-    plot_dynamics_flag = True
-
+    run_inference_flag = True
+    plot_trace_flag = True
+    plot_convergence_flag = True
+    plot_posterior_pairs_flag = True
+    plot_dynamics_flag = False
 
 
     try:

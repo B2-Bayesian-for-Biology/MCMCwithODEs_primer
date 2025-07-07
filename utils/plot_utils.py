@@ -6,7 +6,7 @@ import numpy as np
 from scipy.stats import gaussian_kde
 import sympy as sp
 from tqdm import tqdm
-
+from scipy.integrate import solve_ivp
 
 '''
 This is preliminary. I will make it more general later.
@@ -277,6 +277,19 @@ def plot_convergence(
 
     labels = [var_names_map.get(v, v) if var_names_map else v for v in selected_vars]
 
+
+    # Apply thinning and safety check
+    posterior = trace.posterior
+    n_draws = posterior.sizes["draw"]
+
+    if thin > 1:
+        if thin * max_lag > n_draws:
+            raise ValueError(
+                f"Thinning too aggressive: thin={thin}, max_lag={max_lag}, but only {n_draws} samples available.\n"
+                "Reduce 'thin' or 'max_lag'."
+            )
+        trace = trace.sel(draw=slice(None, None, thin))
+
     # Compute diagnostics
     rhat = az.rhat(trace, var_names=selected_vars)
     ess = az.ess(trace, var_names=selected_vars)
@@ -507,3 +520,302 @@ def posterior_dynamics(
 
 
 
+
+
+
+
+def posterior_dynamics_solve_ivp(
+    dataset,
+    trace,
+    model,
+    num_variables,
+    ode_fn,
+    ode2data_fn,
+    n_plots=100,
+    burn_in=0,
+    time_resolution=200,
+    var_properties=None,
+    save_path=None,
+    figsize=(5, 5),
+    fontname='DejaVu Sans',
+    fontsize=12,
+    line_width=2,
+    alpha=0.8,
+    color_lines='grey',
+    fig_align='horizontal',
+    show=True,
+    sharex=False,
+    sharey=False,
+    suptitle=None,
+    verbose=False,
+    num_sigma=None
+):
+    """
+    Posterior predictive plotting using solve_ivp.
+
+    Parameters:
+        dataset: dict of {var_name: list of dicts with keys "time", "values"}
+        trace: PyMC InferenceData object
+        model: PyMC Model object (used to extract free_RVs)
+        num_variables: number of state variables in the ODE system
+        ode_fn: function (t, y, theta) -> dy/dt
+        ode2data_fn: function (sol) -> dict of named outputs
+    """
+    import arviz as az
+
+       # fixing num_sigma
+    if num_sigma is None:
+        num_sigma = num_variables
+
+    posterior_samples = trace.posterior.stack(draws=("chain", "draw"))
+    var_names = [v.name for v in model.free_RVs]
+
+    param_matrix = np.vstack([
+        posterior_samples[v].values
+        for v in var_names
+        if posterior_samples[v].values.ndim == 1
+    ]).T
+
+    # Plot layout
+    n_vars = len(dataset)
+    if fig_align == 'horizontal':
+        fig, axes = plt.subplots(1, n_vars, figsize=(figsize[0]*n_vars, figsize[1]), sharex=sharex, sharey=sharey)
+    else:
+        fig, axes = plt.subplots(n_vars, 1, figsize=(figsize[0], figsize[1]*n_vars), sharex=sharex, sharey=sharey)
+    if n_vars == 1:
+        axes = [axes]
+
+    # Shared time range
+    all_times = [t for data in dataset.values() for rep in data for t in rep['time']]
+    t_min, t_max = min(all_times), max(all_times)
+    time_finer = np.linspace(t_min, t_max, time_resolution)
+
+    for ax, (var_name, replicates) in zip(axes, dataset.items()):
+        props = var_properties.get(var_name, {}) if var_properties else {}
+        label = props.get("label", var_name)
+        color = props.get("color", None)
+        ylabel = props.get("ylabel", label)
+        xlabel = props.get("xlabel", label)
+        sol_key = props.get("sol_key", var_name.lower().replace(" ", "_"))
+        is_log = props.get("log", False)
+
+        if is_log:
+            ax.set_yscale("log")
+
+        # Posterior ODE simulations
+        for i in range(n_plots):
+            theta = param_matrix[burn_in + i]
+            
+            y0 = theta[-num_variables-num_sigma:-num_sigma]  # assume last 2*num_variables are [y0, bounds]
+            ode_params = theta[:-num_variables-num_sigma]  # all but last 2*num_variables
+            print(theta)
+            #y0 = theta[-num_variables:]
+            #ode_params = theta[:-num_variables]
+
+            try:
+                sol_ivp = solve_ivp(
+                    fun=lambda t, y: ode_fn(t, y, ode_params),
+                    t_span=(time_finer[0], time_finer[-1]),
+                    y0=y0,
+                    t_eval=time_finer,
+                    rtol=1e-6,
+                    atol=1e-6
+                )
+                if not sol_ivp.success:
+                    if verbose:
+                        print(f"[Sample {i}] ODE failed: {sol_ivp.message}")
+                    continue
+
+                sol_outputs = ode2data_fn(sol_ivp.y.T)
+
+                if sol_key not in sol_outputs:
+                    raise KeyError(f"sol_key '{sol_key}' not found in ode2data_fn output.")
+
+                ax.plot(time_finer, sol_outputs[sol_key], '-', color=color_lines, alpha=0.1)
+
+            except Exception as e:
+                if verbose:
+                    print(f"[Sample {i}] Exception in solve_ivp: {e}")
+                continue
+
+        # Plot replicates
+        for i, rep in enumerate(replicates):
+            time = rep["time"]
+            values = rep["values"]
+            rep_label = f"{label} (rep {i+1})" if len(replicates) > 1 else label
+            ax.plot(time, values, label=rep_label, color=color, lw=line_width, alpha=alpha, 
+                    marker='o', markersize=4, linestyle='None')
+
+        ax.set_title(label, fontsize=fontsize, fontname=fontname)
+        ax.set_ylabel(ylabel, fontsize=fontsize, fontname=fontname)
+        ax.set_xlabel(xlabel, fontsize=fontsize, fontname=fontname)
+        ax.tick_params(labelsize=fontsize)
+        if len(replicates) > 1:
+            ax.legend(fontsize=fontsize - 2)
+
+    if suptitle:
+        fig.suptitle(suptitle, fontsize=fontsize+2, fontname=fontname)
+    fig.tight_layout()
+
+    if save_path:
+        plt.savefig(save_path, bbox_inches='tight')
+    if show:
+        plt.show()
+
+    return fig, axes
+
+
+
+
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import solve_ivp
+
+def posterior_dynamics_solve_ivp_flexible(
+    dataset,
+    trace,
+    y0_dict,
+    theta_dict,
+    ode_fn,
+    ode2data_fn,
+    n_plots=100,
+    burn_in=0,
+    time_resolution=200,
+    var_properties=None,
+    save_path=None,
+    figsize=(5, 5),
+    fontname='DejaVu Sans',
+    fontsize=12,
+    line_width=2,
+    alpha=0.8,
+    color_lines='grey',
+    fig_align='horizontal',
+    show=True,
+    sharex=False,
+    sharey=False,
+    suptitle=None,
+    verbose=False
+):
+    """
+    Posterior predictive plotting using solve_ivp with flexible y0/theta dicts.
+
+    Parameters:
+        y0_dict: dict of initial conditions. Each value is scalar or array (chain, draw)
+        theta_dict: dict of parameters. Each value is scalar or array (chain, draw)
+    """
+    import arviz as az
+    import xarray as xr
+
+    # Stack posterior samples
+    posterior = trace.posterior.stack(draws=("chain", "draw"))
+    total_samples = posterior.draws.size
+
+    if n_plots + burn_in > total_samples:
+        raise ValueError("n_plots + burn_in exceeds number of posterior samples")
+
+    # Get common time range
+    all_times = [t for v in dataset.values() for rep in v for t in rep["time"]]
+    t_min, t_max = min(all_times), max(all_times)
+    t_eval = np.linspace(t_min, t_max, time_resolution)
+
+    # Setup figure
+    n_vars = len(dataset)
+    if fig_align == 'horizontal':
+        fig, axes = plt.subplots(1, n_vars, figsize=(figsize[0]*n_vars, figsize[1]), sharex=sharex, sharey=sharey)
+    else:
+        fig, axes = plt.subplots(n_vars, 1, figsize=(figsize[0], figsize[1]*n_vars), sharex=sharex, sharey=sharey)
+    if n_vars == 1:
+        axes = [axes]
+
+    # Posterior predictive sampling loop
+    for i in range(n_plots):
+        idx = burn_in + i
+
+        # Extract parameter values from theta_dict
+        theta_vals = []
+        for key, val in theta_dict.items():
+            if isinstance(val, xr.DataArray):
+                theta_vals.append(posterior[key].values.flatten()[idx])
+            else:
+                theta_vals.append(val)
+
+        # Extract initial conditions from y0_dict
+        y0_vals = []
+        for key, val in y0_dict.items():
+            if isinstance(val, xr.DataArray):
+                y0_vals.append(posterior[key].values.flatten()[idx])
+            else:
+                y0_vals.append(val)
+
+        # Solve the ODE
+        try:
+            sol_ivp = solve_ivp(
+                fun=lambda t, y: ode_fn(t, y, theta_vals),
+                t_span=(t_eval[0], t_eval[-1]),
+                y0=y0_vals,
+                t_eval=t_eval,
+                rtol=1e-6,
+                atol=1e-6
+            )
+            if not sol_ivp.success:
+                if verbose:
+                    print(f"[Sample {i}] ODE solve failed: {sol_ivp.message}")
+                continue
+
+            sol_outputs = ode2data_fn(sol_ivp.y.T)
+
+        except Exception as e:
+            if verbose:
+                print(f"[Sample {i}] Exception in solve_ivp: {e}")
+            continue
+
+        # Plot results
+        for ax, (var_name, replicates) in zip(axes, dataset.items()):
+            props = var_properties.get(var_name, {}) if var_properties else {}
+            label = props.get("label", var_name)
+            color = props.get("color", None)
+            sol_key = props.get("sol_key", var_name.lower().replace(" ", "_"))
+            is_log = props.get("log", False)
+
+            if sol_key not in sol_outputs:
+                raise KeyError(f"{sol_key} not in ode2data_fn output")
+
+            if is_log:
+                ax.set_yscale("log")
+
+            ax.plot(t_eval, sol_outputs[sol_key], '-', color=color_lines, alpha=0.1)
+
+    # Plot replicates
+    for ax, (var_name, replicates) in zip(axes, dataset.items()):
+        props = var_properties.get(var_name, {}) if var_properties else {}
+        label = props.get("label", var_name)
+        color = props.get("color", None)
+        ylabel = props.get("ylabel", label)
+        xlabel = props.get("xlabel", label)
+
+        for i, rep in enumerate(replicates):
+            t = rep["time"]
+            y = rep["values"]
+            rep_label = f"{label} (rep {i+1})" if len(replicates) > 1 else label
+            ax.plot(t, y, label=rep_label, color=color, lw=line_width, alpha=alpha,
+                    marker='o', markersize=4, linestyle='None')
+
+        ax.set_title(label, fontsize=fontsize, fontname=fontname)
+        ax.set_ylabel(ylabel, fontsize=fontsize)
+        ax.set_xlabel(xlabel, fontsize=fontsize)
+        ax.tick_params(labelsize=fontsize)
+        if len(replicates) > 1:
+            ax.legend(fontsize=fontsize - 2)
+
+    if suptitle:
+        fig.suptitle(suptitle, fontsize=fontsize+2)
+    fig.tight_layout()
+
+    if save_path:
+        plt.savefig(save_path, bbox_inches='tight')
+    if show:
+        plt.show()
+
+    return fig, axes
