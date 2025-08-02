@@ -3,8 +3,9 @@ import matplotlib.pyplot as plt
 import arviz as az
 
 # load trace
-growth_trace = az.from_netcdf('../data/normal_growth_trace.nc')
+growth_trace = az.from_netcdf('../../data/normal_growth_trace.nc')
 
+'''
 ############################################
 # trace plots
 ############################################
@@ -18,7 +19,7 @@ for ax_row in axes:
         for i, line in enumerate(lines):
             line.set_color(chain_colors[i % len(chain_colors)])
 plt.tight_layout()
-plt.savefig('../figures/normal_growth_chains')
+#plt.savefig('../figures/normal_growth_chains')
 
 ############################################
 # posteriors
@@ -26,7 +27,7 @@ plt.savefig('../figures/normal_growth_chains')
 
 # Plot posterior correlations
 az.plot_pair(growth_trace, kind='kde', divergences=True, marginals=True)
-plt.savefig('../figures/normal_growth_posterior')
+#plt.savefig('../figures/normal_growth_posterior')
 
 ############################################
 # autocorrelation
@@ -36,7 +37,7 @@ plt.savefig('../figures/normal_growth_posterior')
 rhat = az.rhat(growth_trace)
 autocorr = az.plot_autocorr(growth_trace)
 print(f'Rhat:\n{rhat}\n')
-plt.savefig('../figures/normal_growth_autocorrelation')
+#plt.savefig('../figures/normal_growth_autocorrelation')
 
 ############################################
 # dynamics
@@ -57,15 +58,39 @@ def plot_posterior_predictive(ax, trace, time, obs, num_samples=400, ode_solver=
     for _, row in df.iterrows():
         model_output = odeint(ode_solver,[row["N0"]], time, args=([row["mum"]],))
         plot_model(ax, model_output, time, lw=1, alpha=0.1, c='g',zorder=0, **kwargs)
+        
+
+  
+plt.xlabel('Time (days)',  fontsize=20)
+plt.ylabel('Cell density (cells/ml)', fontsize=20)
     ax.legend()
     ax.semilogy()
 
 f,ax = plt.subplots()
-data = pd.read_csv("./../data/phaeocystis_control.csv")
+data = pd.read_csv("./../../data/phaeocystis_control.csv")
 time = data['times'].values
 obs = data['cells'].values
 plot_posterior_predictive(ax, growth_trace, time, obs)
 
-f.savefig('../figures/normal_growth_dynamics')
+#f.savefig('../figures/normal_growth_dynamics')
+'''
 
 
+## 
+data = pd.read_csv("./../../data/phaeocystis_control.csv")
+time = data['times'].values
+obs = data['cells'].values
+
+# Set the global font size for y-tick labels
+plt.rc('ytick', labelsize=20) #
+plt.plot(time, obs, 'ko', label=r'$Phaeocystis$ $globosa$',zorder=1)
+plt.yscale('log') 
+plt.xticks(fontsize=20)
+plt.rcParams['legend.fontsize'] = 20
+
+  
+plt.xlabel('Time (days)',  fontsize=20)
+plt.ylabel('Cell density (cells/ml)', fontsize=20)
+plt.legend()
+plt.tight_layout()
+plt.show()

@@ -9,9 +9,9 @@ import pytensor.tensor as pt
 import os
 import sys
 # Get path to MCMCwithODEs_primer (3 levels up)
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..','..'))
 sys.path.insert(0, project_root)
-from utils import plot_trace, plot_convergence, plot_posterior_pairs, posterior_dynamics2  # because __init__.py already re-exports it
+from utils import plot_trace, plot_convergence, plot_posterior_pairs # because __init__.py already re-exports it
 
 # Define the differential equation system
 def cells_ode(y, t, params):

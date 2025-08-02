@@ -66,9 +66,12 @@ if __name__ == "__main__":
         mum_stddevs.append(std_mum)
         print(f"Posterior std of mum: {std_mum:.4f}")
 
+        # save trace files
+        az.to_netcdf(trace, "./../data/trace_sigma_delta_" + str(sd) + ".nc")
+        
     # Plot the results
     plt.figure(figsize=(8, 5))
-    plt.plot(sigma_delta_values, mum_stddevs, marker='o', linestyle='none')
+    plt.plot(sigma_delta_values, mum_stddevs, marker='o', linestyle='none', color='red')
     plt.xlabel("Prior Std Dev of $\delta$")
     plt.ylabel("Posterior Std Dev of $\mu$")
     plt.title("Effect of Prior Uncertainty in $\delta$ on Posterior of $\mu$")
