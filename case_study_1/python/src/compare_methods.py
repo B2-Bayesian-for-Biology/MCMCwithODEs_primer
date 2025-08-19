@@ -51,6 +51,7 @@ print(f"Bootstrap Estimate of mum: {np.mean(bootstrap_estimates)}" and f"Standar
 mus = np.linspace(0.01, 1.0, 500)
 log_likelihoods = [-neg_log_likelihood(mu) for mu in mus]
 
+'''
 import matplotlib.pyplot as plt
 plt.figure(figsize=(10, 6))
 plt.plot(mus, log_likelihoods, label='Log-Likelihood')
@@ -65,3 +66,68 @@ plt.legend()
 plt.grid()
 plt.show()
 plt.savefig('./../figures/log_likelihood_vs_growth_rate.png')
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+import arviz as az
+# Load the MCMC trace
+trace = az.from_netcdf('./../data/normal_growth_trace.nc')
+
+
+# Estimates to plot
+estimates = {
+    'Least Squares': mum_lsq,
+    'MLE': mum_mle,
+    'MAP': mum_map,
+    'Bootstrap': np.mean(bootstrap_estimates),
+    'Posterior Mean': np.mean(trace.posterior['mum'].values)
+}
+
+# Plotting
+plt.figure(figsize=(10, 6))
+plt.bar(estimates.keys(), estimates.values(), color=['red', 'green', 'blue', 'orange', 'purple'])
+plt.ylabel('Estimated Growth Rate (mum)')
+plt.title('Comparison of Growth Rate Estimates from Different Methods')
+plt.xticks(rotation=45)
+plt.grid(axis='y')
+
+# Save and show
+plt.tight_layout()
+plt.savefig('./../figures/growth_rate_estimates_comparison.png')
+plt.show()
+
+'''
+
+import matplotlib.pyplot as plt
+import numpy as np
+import arviz as az
+
+# Load the MCMC trace
+trace = az.from_netcdf('./../data/normal_growth_trace.nc')
+
+# Extract posterior samples
+posterior_samples = trace.posterior['mum'].values.flatten()
+posterior_mean = np.mean(posterior_samples)
+posterior_std = np.std(posterior_samples)
+
+# Bootstrap statistics
+bootstrap_mean = np.mean(bootstrap_estimates)
+bootstrap_std = np.std(bootstrap_estimates)
+
+# Method names and values
+methods = ['Least Squares', 'MLE', 'MAP', 'Bootstrap', 'Posterior Mean']
+estimates = [mum_lsq, mum_mle, mum_map, bootstrap_mean, posterior_mean]
+errors = [0, 0, 0, bootstrap_std, posterior_std]  # Only last two have error bars
+
+# Plot
+plt.figure(figsize=(10, 6))
+plt.xticks(fontsize=20)
+plt.yticks(fontsize=20)
+plt.errorbar(methods, estimates, yerr=errors, fmt='o', capsize=5, color='black')
+plt.ylabel('Estimated Growth Rate μ (/day)', fontsize=20)
+#plt.title('Comparison of Growth Rate Estimates from Different Methods')
+plt.grid(axis='y')
+plt.tight_layout()
+plt.savefig('./../figures/growth_rate_estimates_dotplot.png')
+plt.show()
