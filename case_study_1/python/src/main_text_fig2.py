@@ -1,5 +1,5 @@
-import malthusian_normal_plotting as gp
-import death_normal_plotting as dp
+from legacy import malthusian_normal_plotting as gp
+from legacy import death_normal_plotting as dp
 import matplotlib.pyplot as plt
 import arviz as az
 import seaborn as sns

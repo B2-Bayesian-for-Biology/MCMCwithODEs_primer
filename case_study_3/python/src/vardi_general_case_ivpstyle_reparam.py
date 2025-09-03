@@ -32,7 +32,7 @@ from scipy.integrate import solve_ivp
 # Get path to MCMCwithODEs_primer (3 levels up)
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 sys.path.insert(0, project_root)
-from utils import plot_trace, plot_convergence, plot_posterior_pairs, posterior_dynamics, posterior_dynamics_solve_ivp, posterior_dynamics_solve_ivp_flexible # because __init__.py already re-exports it
+from utils.plot_utils_v2 import plot_trace, plot_convergence, plot_posterior_pairs, posterior_dynamics, posterior_dynamics_solve_ivp, posterior_dynamics_solve_ivp_flexible # because __init__.py already re-exports it
 
 
 ######## load data
@@ -204,7 +204,7 @@ if __name__ == "__main__":
         trace = az.from_netcdf(file_path)
     
 
-    if plot_trace_flag:
+    if True:
         plot_trace(
         trace=trace,
         model=model,
@@ -261,7 +261,7 @@ if __name__ == "__main__":
 
 
 
-    if plot_dynamics_flag:
+    if False:
 
         n_samples = 500
         burn_in = 0
