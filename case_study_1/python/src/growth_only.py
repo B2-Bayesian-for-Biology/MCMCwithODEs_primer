@@ -85,10 +85,10 @@ if __name__ == "__main__":
     model = build_pymc_model(time, obs)
     # Default to False if not defined
     run_inference_flag = False
-    plot_trace_flag = False
+    plot_trace_flag = True
     plot_convergence_flag = True
-    plot_posterior_pairs_flag = False
-    plot_dynamics_flag = False
+    plot_posterior_pairs_flag = True
+    plot_dynamics_flag = True
 
     file_path = '../data/normal_growth_trace.nc'
     
