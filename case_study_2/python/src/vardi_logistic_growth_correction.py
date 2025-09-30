@@ -97,7 +97,7 @@ def build_pymc_model(ehux_total_time, ehux_total_density ):
         P0 = pm.Normal(r"$P_0$ (init. live)", mu = 0.23e6, sigma=0.05e6)  # Based on data, around
         
         sigma_live = pm.HalfNormal(r"$\sigma_L$", 3)
-
+        
 
         # Solve the ODE system
         y_hat = cell_model(y0=[P0], theta=[r,K])
@@ -130,9 +130,9 @@ if __name__ == "__main__":
     
     # Default to False if not defined
     run_inference_flag = False
-    plot_trace_flag = True
-    plot_convergence_flag = True
-    plot_posterior_pairs_flag = True
+    plot_trace_flag = False
+    plot_convergence_flag = False
+    plot_posterior_pairs_flag = False
     plot_dynamics_flag = True
 
     

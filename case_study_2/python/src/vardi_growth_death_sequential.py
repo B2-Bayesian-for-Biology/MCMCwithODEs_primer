@@ -150,12 +150,11 @@ if __name__ == "__main__":
     model = build_pymc_model(ehux_total_time, ehux_total_density,ehux_dead_time, ehux_dead_density)
     
     # Default to False if not defined
+
     run_inference_flag = False
-    # Default to False if not defined
-    run_inference_flag = False
-    plot_trace_flag = True
-    plot_convergence_flag = True
-    plot_posterior_pairs_flag = True
+    plot_trace_flag = False
+    plot_convergence_flag = False
+    plot_posterior_pairs_flag = False
     plot_dynamics_flag = True
 
 
@@ -176,6 +175,8 @@ if __name__ == "__main__":
     # Plotting part
     trace = az.from_netcdf(file_path)
 
+    print(az.summary(trace, hdi_prob=0.95))
+    
     if plot_trace_flag:
         plot_trace(
         trace=trace,
