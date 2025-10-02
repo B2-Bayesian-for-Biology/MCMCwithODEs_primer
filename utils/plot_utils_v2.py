@@ -105,6 +105,7 @@ def plot_trace(
 
                 # Add prior KDE if available
                 if (prior_idata is not None) and (var_names[i] in prior_idata.prior.data_vars):
+                    '''
                     prior_vals = prior_idata.prior[var_names[i]].values.flatten()
                     if prior_vals.size > 1:
                         kde = gaussian_kde(prior_vals, bw_method=1.0)
@@ -113,7 +114,25 @@ def plot_trace(
                         x_vals = np.linspace(x_min - x_pad, x_max + x_pad, 200)
                         y_vals = kde(x_vals)
                         ax.plot(x_vals, y_vals, color=prior_color, alpha=0.8, label='Prior KDE')
-
+                    '''
+                    # Replace your KDE block with this
+                    prior_vals = prior_idata.prior[var_names[i]].values.flatten()
+                    if prior_vals.size > 1:
+                        a = np.min(prior_vals)
+                        b = np.max(prior_vals)
+                        if np.isfinite(a) and np.isfinite(b) and b > a:
+                            # Draw a flat line for the uniform PDF
+                            height = 1.0 / (b - a)
+                            ax.hlines(height, a, b, color=prior_color, alpha=0.9, label='Prior (Uniform)')
+                            # (optional) mark vertical edges so it reads clearly
+                            ax.vlines([a, b], 0, height, color=prior_color, alpha=0.3, linestyle='--')
+                        else:
+                            # Fallback to KDE if degenerate
+                            kde = gaussian_kde(prior_vals, bw_method=1.0)
+                            x_vals = np.linspace(a, b, 200)
+                            y_vals = kde(x_vals)
+                            ax.plot(x_vals, y_vals, color=prior_color, alpha=0.8, label='Prior KDE')
+                    
             # Apply scientific notation (×10^n) to BOTH axes on every panel
             apply_sci_mathtext(ax)
 
