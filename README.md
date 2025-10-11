@@ -64,13 +64,13 @@ where:
 
 ```python
 def logistic_growth(y, t, params):
-    # Use indexing instead of unpacking
+
     P = y[0]
     
     r = params[0]
     K = params[1]
 
-    dydt = [0]
+
     dydt[0] = r * (1 - P / K) * P 
     
     return dydt
