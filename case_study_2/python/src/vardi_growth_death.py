@@ -26,23 +26,23 @@ from utils import plot_trace, plot_convergence, plot_posterior_pairs, posterior_
 # load data
 dataset = pd.read_csv("./../data/total_cells.csv")
 
-ehux_d7_cells  = dataset.head(15)
+#ehux_d7_cells  = dataset.head(15)
 ehux_cells = dataset.tail(15)
 
 ehux_total_time = ehux_cells['Time (days)'].values
 ehux_total_density = 1e6*ehux_cells[' Density (1e6/ml)'].values
-ehux_d7_total_time = ehux_d7_cells['Time (days)'].values
-ehux_d7_total_density = 1e6*ehux_d7_cells[' Density (1e6/ml)'].values
+#ehux_d7_total_time = ehux_d7_cells['Time (days)'].values
+#ehux_d7_total_density = 1e6*ehux_d7_cells[' Density (1e6/ml)'].values
 
 death_dataset = pd.read_csv("./../data/death_percentage.csv")
 
 ehux_death = death_dataset.head(15)
-ehux_d7_death = death_dataset.tail(15)
+#ehux_d7_death = death_dataset.tail(15)
 
 ehux_dead_time = ehux_death['Time (days)']
 ehux_dead_density = ehux_death[' Dead percentage '].values*ehux_total_density/100
-ehux_d7_dead_time = ehux_d7_death['Time (days)']
-ehux_d7_dead_density = ehux_d7_death[' Dead percentage ']*ehux_d7_total_density/100
+#ehux_d7_dead_time = ehux_d7_death['Time (days)']
+#ehux_d7_dead_density = ehux_d7_death[' Dead percentage ']*ehux_d7_total_density/100
 
 ## differential equation and solvers
 
@@ -134,10 +134,10 @@ if __name__ == "__main__":
     # Default to False if not defined
     run_inference_flag = False
     # Default to False if not defined
-    run_inference_flag = False
-    plot_trace_flag = False
-    plot_convergence_flag = False
-    plot_posterior_pairs_flag = False
+    run_inference_flag = True
+    plot_trace_flag = True
+    plot_convergence_flag = True
+    plot_posterior_pairs_flag = True
     plot_dynamics_flag = True
 
 
