@@ -50,8 +50,8 @@ ehux_d7_total_density = 1e6*ehux_d7_cells[' Density (1e6/ml)'].values
 
 death_dataset = pd.read_csv("./../data/death_percentage.csv")
 
-ehux_death = death_dataset.head(15)
-ehux_d7_death = death_dataset.tail(15)
+ehux_death = death_dataset.tail(15)
+ehux_d7_death = death_dataset.head(15)
 
 ehux_dead_time = ehux_death['Time (days)']
 ehux_dead_density = ehux_death[' Dead percentage '].values*ehux_total_density/100
