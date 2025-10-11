@@ -51,7 +51,7 @@ A simple example used in the primer is the **logistic growth model**, a foundati
 
 The logistic growth equation is given by:
 
-\( \frac{dP}{dt} = rP \left(1 - \frac{P}{K}\right) \)
+$$ \frac{dP}{dt} = rP \left(1 - \frac{P}{K}\right) $$
 
 where:  
 - \( P(t) \) = population size at time \( t \)  
@@ -66,11 +66,8 @@ where:
 def logistic_growth(y, t, params):
 
     P = y[0]
-    
     r = params[0]
     K = params[1]
-
-
     dydt[0] = r * (1 - P / K) * P 
     
     return dydt
