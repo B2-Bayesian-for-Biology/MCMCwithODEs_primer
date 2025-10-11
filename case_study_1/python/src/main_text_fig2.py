@@ -42,6 +42,15 @@ ax[2].tick_params(axis='both', labelsize=10)  # Change tick size for ax[2]
 
 
 # Scatter plot of growth vs death rates
+plt.rcParams.update({
+    "font.size": 16,        # increase all font sizes
+    "axes.labelsize": 18,   # x/y labels
+    "axes.titlesize": 20,   # subplot titles
+    "legend.fontsize": 14,  # legend text
+    "xtick.labelsize": 14,
+    "ytick.labelsize": 14
+})
+
 ax[3].scatter(ddf.mum, ddf.delta, s=10, alpha=0.3, color='red')
 # Pair plot of covariance of ddf.mum and ddf.delta
 #sns.pairplot(ddf[['mum', 'delta']], diag_kind='kde')
