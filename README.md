@@ -41,6 +41,60 @@ Below is an example visualization from the primer, illustrating Bayesian inferen
 
 ---
 
+---
+
+## 📈 Logistic Growth Example
+
+A simple example used in the primer is the **logistic growth model**, a foundational ecological model describing population growth with a carrying capacity.
+
+### Mathematical Model
+
+The logistic growth equation is given by:
+
+\[
+\frac{dP}{dt} = rP \left(1 - \frac{P}{K}\right)
+\]
+
+where:  
+- \( P(t) \) = population size at time \( t \)  
+- \( r \) = intrinsic growth rate  
+- \( K \) = carrying capacity  
+
+---
+
+### Python Implementation
+
+```python
+def logistic_growth(y, t, params):
+    # Use indexing instead of unpacking
+    P = y[0]
+    
+    r = params[0]
+    K = params[1]
+
+    dydt = [0]
+    dydt[0] = r * (1 - P / K) * P 
+    
+    return dydt
+```
+
+## Example Outputs
+
+### Simulated Dynamics
+
+Population growth over time under logistic dynamics:
+<img width="800" alt="Logistic Growth Dynamics" src="https://github.com/dtalmy/MCMCwithODEs_primer/blob/main/case_study_2/python/figures/vardi_logistic_growth_dynamics_corrected.png" />
+
+
+## MCMC Posterior Chains
+
+### MCMC chains showing convergence for inferred parameters \( r \)  and \( K \) :
+
+<img width="800" alt="Logistic Growth Chains" src="https://github.com/dtalmy/MCMCwithODEs_primer/blob/main/case_study_2/python/figures/vardi_logistic_growth_chains_corrected.png" />
+
+
+
+---
 ## 🧠 Key Concepts
 
 - **Model definition:** Rate-based ODEs representing microbial birth–death or interaction dynamics  
