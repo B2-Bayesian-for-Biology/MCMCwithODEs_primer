@@ -18,7 +18,7 @@ import sys
 # Get path to MCMCwithODEs_primer (3 levels up)
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 sys.path.insert(0, project_root)
-from utils import plot_trace, plot_convergence, plot_posterior_pairs, posterior_dynamics # because __init__.py already re-exports it
+from utils.plot_utils_v2 import plot_trace, plot_convergence, plot_posterior_pairs, posterior_dynamics # because __init__.py already re-exports it
 
 
 ######## load data
@@ -166,10 +166,10 @@ if __name__ == "__main__":
 
     # Default to False if not defined
     run_inference_flag = False
-    plot_trace_flag = False
+    plot_trace_flag = True
     plot_convergence_flag = False
     plot_posterior_pairs_flag = False
-    plot_dynamics_flag = True
+    plot_dynamics_flag = False
 
 
 
@@ -177,14 +177,15 @@ if __name__ == "__main__":
         run_inference_flag
     except NameError:
         run_inference_flag = False
-
+    '''
     if not os.path.exists(file_path) or run_inference_flag:
         print("Running inference...")
         trace = run_inference(model)
         az.to_netcdf(trace, file_path)
     else:
-        print(f"{file_path} already exists. Skipping model run.")
-        trace = az.from_netcdf(file_path)
+    '''
+    print(f"{file_path} already exists. Skipping model run.")
+    trace = az.from_netcdf(file_path)
     
 
     if plot_trace_flag:
