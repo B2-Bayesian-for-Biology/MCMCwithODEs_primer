@@ -187,7 +187,7 @@ if __name__ == "__main__":
 
 
     # Default to False if not defined
-    run_inference_flag = True
+    run_inference_flag = False
     plot_trace_flag = True
     plot_convergence_flag = True
     plot_posterior_pairs_flag = True
@@ -339,8 +339,8 @@ if __name__ == "__main__":
             ax.set_xlabel("Time (days)", fontsize=14)
             ax.set_ylabel("Density" if i < 2 else "mmol N $m^{-3}$", fontsize=14)
             ax.set_yscale('log' if i < 2 else 'linear')
-            ax.legend(fontsize=12)
-            ax.tick_params(labelsize=12)
+            ax.legend(fontsize=20)
+            ax.tick_params(labelsize=20)
 
 
         plt.tight_layout()

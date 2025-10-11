@@ -169,10 +169,11 @@ if __name__ == "__main__":
         num_variables=1,
         ode_fn=cells_ode,
         ode2data_fn=ode_solution2data,
+        fontsize=20,
         save_path="../figures/vardi_logistic_growth_dynamics.png",
         # the key of this dict is the variable name in the dataset_postprocessing
         var_properties={
-            "Cells": {"label": "Total", "color": "black", "ylabel": "Total cell density (/ml)", "xlabel":"Time (days)","sol_key": "total","log": True}
+            "Cells": {"label": "Total", "color": "black", "ylabel": "Cells/ml", "xlabel":"Time (days)","sol_key": "total","log": True}
         },
         suptitle="Posterior Predictive Dynamics",
         color_lines='green'

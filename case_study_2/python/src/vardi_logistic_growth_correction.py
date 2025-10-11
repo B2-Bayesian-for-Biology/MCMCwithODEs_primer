@@ -214,6 +214,7 @@ if __name__ == "__main__":
         n_plots=100,
         burn_in=50,
         num_variables=1,
+        fontsize=20,
         ode_fn=logistic_growth,
         ode2data_fn=ode_solution2data,
         save_path="../figures/vardi_logistic_growth_dynamics_corrected.png",

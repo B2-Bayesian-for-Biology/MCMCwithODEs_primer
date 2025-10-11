@@ -152,7 +152,7 @@ if __name__ == "__main__":
     # Default to False if not defined
 
     run_inference_flag = False
-    plot_trace_flag = False
+    plot_trace_flag = True
     plot_convergence_flag = False
     plot_posterior_pairs_flag = False
     plot_dynamics_flag = True
@@ -182,7 +182,7 @@ if __name__ == "__main__":
         trace=trace,
         model=model,
         fontname='Arial',
-        fontsize=12,
+        fontsize=20,
         num_prior_samples=2000,
         save_path='../figures/vardi_growth_death_chains_seq.png'
         )
@@ -237,6 +237,7 @@ if __name__ == "__main__":
         model=model,
         n_plots=100,
         burn_in=50,
+        fontsize=20,
         num_variables=2,
         ode_fn=logistic_growth_death,
         ode2data_fn=ode_solution2data,
