@@ -1,0 +1,56 @@
+site_name: MCMCwithODEs_primer
+site_description: Primer on Bayesian inference of ecological ODE models with Python (PyMC) and Julia (Turing.jl), with case studies.
+site_url: ""
+repo_name: MCMCwithODEs_primer
+repo_url: https://github.com/B2-Bayesian-for-Biology/MCMCwithODEs_primer
+
+theme:
+  name: material
+  features:
+    - navigation.instant
+    - navigation.sections
+    - navigation.tracking
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - toc.integrate
+  palette:
+    - scheme: slate
+      primary: indigo
+      accent: teal
+  icon:
+    logo: material/dna
+
+plugins:
+  - search
+  - mkdocs-jupyter:
+      execute: false          # don't run notebooks during build
+      include_source: false   # don't show raw JSON
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+
+extra_css:
+  - stylesheets/overrides.css
+
+nav:
+  - Home: index.md
+  - Education:
+      - Python (PyMC):
+          - "Case Study 1 — Birth–death dynamics": education/python/case_study_1.ipynb
+          - "Case Study 2 — Priors, noise models, diagnostics": education/python/case_study_2.ipynb
+          - "Case Study 3 — Posterior inference & interpretation": education/python/case_study_3.ipynb
+      - Julia (Turing.jl):
+          - "Case Study 1 — Birth–death dynamics": education/julia/case_study_1.ipynb
+          - "Case Study 2 — Priors, noise models, diagnostics": education/julia/case_study_2.ipynb
+  - Contributors: contributors.md

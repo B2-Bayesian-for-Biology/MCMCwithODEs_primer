@@ -1,0 +1,3 @@
+/* Subtle widen content and soften code blocks */
+.md-grid { max-width: 1200px; }
+.md-typeset code, .md-typeset pre { border-radius: 8px; }
