@@ -835,3 +835,127 @@ def posterior_dynamics_solve_ivp_flexible(
         plt.show()
 
     return fig, axes
+
+
+
+## Case 3 clean print (too much code 4 notebook) ##
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.collections import LineCollection
+import xarray as xr
+
+def case_3_posteriors(trace, ehux_total_time, ehux_death_time, ehux_total_density, ehux_dead_density, general_case, ode_solution2data):
+    n_samples = 500
+    burn_in = 0
+
+    # ---------- 1) Pre-compute once, avoid .flatten() in the loop ----------
+    posterior = trace.posterior.stack(draws=("chain", "draw"))
+
+    if "N0" not in posterior:
+        Qn_vals = posterior["Qn"].values
+        N0_vals = 1000 + ((500 / 1.8e-10) * (Qn_vals - 3.2e-10))
+        posterior["N0"] = xr.DataArray(N0_vals, dims=posterior["Qn"].dims, coords=posterior["Qn"].coords)
+
+    # Pull 1-D numpy views once (zero copy where possible)
+    to_1d = lambda name: np.asarray(posterior[name].values).reshape(-1)
+    mu_max_all = to_1d("mu_max")
+    Ks_all     = to_1d("Ks")
+    Qn_all     = to_1d("Qn")
+    delta_all  = to_1d("delta")
+    N0_all     = to_1d("N0")
+    P0_all     = to_1d("P0")
+    D0_all     = to_1d("D0")
+
+    available_draws = mu_max_all.shape[0]
+    assert burn_in + n_samples <= available_draws, "Not enough samples"
+
+    # Pick the exact indices we’ll use (no Python increments in the loop)
+    idxs = np.arange(burn_in, burn_in + n_samples)
+
+    # ---------- 2) Time grid computed once ----------
+    t_min = float(min(ehux_total_time.min(), ehux_death_time.min()))
+    t_max = float(max(ehux_total_time.max(), ehux_death_time.max()))
+    t_eval = np.linspace(t_min, t_max, 200)
+
+    # ---------- 3) Solve ODEs with args= (avoids per-iter lambda) ----------
+    # general_case signature must be: general_case(t, y, theta)
+    # We'll pass theta via args=(theta,) into solve_ivp.
+
+    from scipy.integrate import solve_ivp
+
+    # Choose a method suited to your system (try 'BDF' if stiff; otherwise 'DOP853' is fast/accurate)
+    METHOD = "BDF"         # try "DOP853" if non-stiff
+    RTOL, ATOL = 1e-6, 1e-6  # consider 1e-5 / 1e-5 for more speed
+
+    # ---------- 4) Collect curves, plot once via LineCollection (much cheaper) ----------
+    total_segments = []
+    dead_segments  = []
+    nutr_segments  = []
+
+    for idx in idxs:
+        theta = [mu_max_all[idx], Ks_all[idx], Qn_all[idx], delta_all[idx]]
+        y0    = [N0_all[idx],     P0_all[idx], D0_all[idx]]
+
+        sol = solve_ivp(
+            fun=general_case,
+            t_span=(t_eval[0], t_eval[-1]),
+            y0=y0,
+            t_eval=t_eval,
+            rtol=RTOL,
+            atol=ATOL,
+            method=METHOD,
+            args=(theta,),
+            dense_output=False,    # faster; you already supply t_eval
+            vectorized=False       # set True only if general_case supports vectorization
+        )
+        if not sol.success:
+            continue
+
+        s = ode_solution2data(sol.y.T)  # expects shape (len(t_eval), nstates)
+
+        # Build polyline segments for a single efficient draw call per subplot
+        total_segments.append(np.column_stack((t_eval, s["total"]))[:, None, :])
+        dead_segments.append (np.column_stack((t_eval, s["dead"])) [:, None, :])
+        nutr_segments.append (np.column_stack((t_eval, sol.y[0]))   [:, None, :])
+
+    # If nothing solved, bail early
+    if len(total_segments) == 0:
+        raise RuntimeError("All ODE solves failed.")
+
+    total_segments = np.concatenate(total_segments, axis=1).transpose(1,0,2)  # (n_lines, n_pts, 2)
+    dead_segments  = np.concatenate(dead_segments,  axis=1).transpose(1,0,2)
+    nutr_segments  = np.concatenate(nutr_segments,  axis=1).transpose(1,0,2)
+
+    # ---------- 5) Plot: one collection per panel instead of hundreds of Line2D ----------
+    fig, axes = plt.subplots(1, 3, figsize=(12, 4), sharex=True)
+    labels = ["Total cells (/ml)", "Dead cells (/ml)", "Nutrients"]
+
+    # Total
+    lc0 = LineCollection(total_segments, linewidths=1.0, alpha=0.05)
+    axes[0].add_collection(lc0)
+    axes[0].autoscale_view()
+
+    # Dead
+    lc1 = LineCollection(dead_segments, linewidths=1.0, alpha=0.05)
+    axes[1].add_collection(lc1)
+    axes[1].autoscale_view()
+
+    # Nutrients
+    lc2 = LineCollection(nutr_segments, linewidths=1.0, alpha=0.05)
+    axes[2].add_collection(lc2)
+    axes[2].autoscale_view()
+
+    # Observed data overlays (single scatter calls)
+    axes[0].scatter(ehux_total_time, ehux_total_density, c="k", s=20, zorder=3)
+    axes[1].scatter(ehux_death_time, ehux_dead_density, c="k", s=20, zorder=3)
+
+    # Titles and formatting (no legend spam)
+    for i, ax in enumerate(axes):
+        ax.set_title(labels[i])
+        ax.set_xlabel("Time (days)", fontsize=12)
+        ax.set_ylabel("Density" if i < 2 else r"mmol N $m^{-3}$", fontsize=12)
+        ax.set_yscale('log' if i < 2 else 'linear')
+        ax.tick_params(labelsize=11)
+
+    plt.tight_layout()
+    plt.show()

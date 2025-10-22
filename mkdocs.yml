@@ -37,11 +37,18 @@ markdown_extensions:
       permalink: true
   - pymdownx.details
   - pymdownx.superfences
+  - pymdownx.highlight
   - pymdownx.tabbed:
       alternate_style: true
 
 extra_css:
+  - https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css
   - stylesheets/overrides.css
+
+extra_javascript:
+  - https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js
+  - https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js
+  - javascripts/katex-init.js
 
 nav:
   - Home: index.md
