@@ -1,8 +1,8 @@
 ---
-title: 🧬 MCMCwithODEs_primer
+title: 🧬 Baysian Inference for Biological ODEs
 ---
 
-# 🧬 MCMCwithODEs_primer  
+# 🧬 Baysian Inference for Biological ODEs
 ### **Bayesian Learning of Microbial Traits from Population Time Series Data: A Primer**
 
 Mathematical models are increasingly used to infer traits, interactions, and functional dynamics of microbial systems. The inference process typically begins with a rate-based **Ordinary Differential Equation (ODE)** model.
@@ -26,6 +26,8 @@ This repository accompanies our upcoming paper:
 > *(Link will be posted here when the paper is online.)*
 
 ---
+
+**New to the workflow?** See the [Mini Tutorial — 10 Steps](ten-steps.md) for a concise, expandable walkthrough.
 
 ## 🚀 Quick start
 
