@@ -275,3 +275,171 @@ end
 #   trajectories (as above) against the observed points; optionally add error bars to y_obs.
 # - For stiff ODEs, consider Rosenbrock23() or other stiff solvers.
 # - If your t_obs are not strictly increasing, sort them or use unique(t_obs) with care.
+
+
+
+using DataFrames, StatsBase, DifferentialEquations, Plots
+
+"""
+Posterior trajectories for:
+  - Total cells = P + D
+  - Dead cells  = D
+  - Nutrients   = N
+
+Matches reference layout: Total + Dead on log scale, Nutrients linear.
+"""
+function plot_posterior_states_aligned_case_3(chain, prob, times;
+    n_draws::Int=200,
+    ribbon_q::Tuple{<:Real,<:Real}=(0.05, 0.95),
+    solver=Rodas5(), abstol=1e-6, reltol=1e-6,
+    alpha_paths=0.08, lw_paths=1.0,
+    obs_total=nothing,
+    obs_dead=nothing
+)
+
+    df = DataFrame(chain)
+    required = [:mum, :Ks, :Qn, :delta, :P0, :D0]
+    miss = setdiff(required, propertynames(df))
+    !isempty(miss) && error("Chain is missing parameters: $(miss)")
+
+    N0_from_Qn(qn) = 1000 + ((500 / 1.8e-10) * (qn - 3.2e-10))
+    n = nrow(df)
+    idxs = rand(1:n, min(n_draws, n))
+    T = length(times)
+
+    total_paths = Matrix{Float64}(undef, T, length(idxs))
+    dead_paths  = Matrix{Float64}(undef, T, length(idxs))
+    nutr_paths  = Matrix{Float64}(undef, T, length(idxs))
+
+    for (j, i) in enumerate(idxs)
+        mum = df.mum[i]; Ks = df.Ks[i]; Qn = df.Qn[i]; δ = df.delta[i]
+        P0  = df.P0[i];  D0 = df.D0[i]
+        N0  = hasproperty(df, :N0) ? df.N0[i] : N0_from_Qn(Qn)
+
+        pr  = remake(prob; u0=[N0, P0, D0], p=[mum, Ks, Qn, δ], tspan=(times[1], times[end]))
+        sol = solve(pr, solver; saveat=times, abstol=abstol, reltol=reltol)
+
+        N = sol[1, :]
+        P = sol[2, :]
+        D = sol[3, :]
+
+        nutr_paths[:, j]  = max.(N, 0.0)
+        dead_paths[:, j]  = max.(D, 0.0)
+        total_paths[:, j] = max.(P .+ D, 0.0)
+    end
+
+    quant_band(M) = (mapslices(x -> quantile(x, ribbon_q[1]), M; dims=2)[:],
+                     mapslices(x -> quantile(x, ribbon_q[2]), M; dims=2)[:])
+
+    loT, hiT = quant_band(total_paths)
+    loD, hiD = quant_band(dead_paths)
+    loN, hiN = quant_band(nutr_paths)
+
+    # Total (log scale)
+    p1 = plot(times, total_paths; color=:steelblue, alpha=alpha_paths, lw=lw_paths, label="",
+        yscale=:log10, xlabel="Time (days)", ylabel="Density", title="Total cells (/ml)")
+    plot!(times, loT, ribbon=(hiT .- loT), lw=2, fillalpha=0.0, label="Credible band")
+    if obs_total !== nothing
+        scatter!(times, obs_total; ms=5, color=:black, label="", alpha=0.9)
+    end
+
+    # Dead (log scale)
+    p2 = plot(times, dead_paths; color=:steelblue, alpha=alpha_paths, lw=lw_paths, label="",
+        yscale=:log10, xlabel="Time (days)", ylabel="Density", title="Dead cells (/ml)")
+    plot!(times, loD, ribbon=(hiD .- loD), lw=2, fillalpha=0.0, label="Credible band")
+    if obs_dead !== nothing
+        scatter!(times, obs_dead; ms=5, color=:black, label="", alpha=0.9)
+    end
+
+    # Nutrients (linear scale)
+    p3 = plot(times, nutr_paths; color=:steelblue, alpha=alpha_paths, lw=lw_paths, label="",
+        xlabel="Time (days)", ylabel="mmol N m⁻³", title="Nutrients")
+    plot!(times, loN, ribbon=(hiN .- loN), lw=2, fillalpha=0.0, label="Credible band")
+
+    plot(p1, p2, p3; layout=(1,3), size=(1100, 350), margin=5mm)
+end
+
+
+
+
+
+
+
+using DataFrames, StatsBase, DifferentialEquations, Plots
+
+function plot_posterior_states_stacked(chain, prob, times;
+    n_draws::Int=200,
+    ribbon_q=(0.05, 0.95),              # CI (e.g., 90%)
+    solver=Rodas5(), abstol=1e-6, reltol=1e-6,
+    alpha_draws=0.10, lw_draws=1.0,     # faint grey draws
+    ci_color=:deeppink3, ci_alpha=0.25, # pink median + CI
+    obs_total=nothing, obs_dead=nothing,
+    size=(900, 1050)                    # tall for vertical stack
+)
+    df = DataFrame(chain)
+    required = [:mum, :Ks, :Qn, :delta, :P0, :D0]
+    miss = setdiff(required, propertynames(df))
+    !isempty(miss) && error("Chain is missing parameters: $(miss)")
+
+    N0_from_Qn(qn) = 1000 + ((500 / 1.8e-10) * (qn - 3.2e-10))
+    n = nrow(df); idxs = rand(1:n, min(n_draws, n))
+    T = length(times)
+
+    total_paths = Matrix{Float64}(undef, T, length(idxs))
+    dead_paths  = Matrix{Float64}(undef, T, length(idxs))
+    nutr_paths  = Matrix{Float64}(undef, T, length(idxs))
+
+    for (j, i) in enumerate(idxs)
+        mum=df.mum[i]; Ks=df.Ks[i]; Qn=df.Qn[i]; δ=df.delta[i]
+        P0=df.P0[i];  D0=df.D0[i]
+        N0 = hasproperty(df,:N0) ? df.N0[i] : N0_from_Qn(Qn)
+
+        pr  = remake(prob; u0=[N0,P0,D0], p=[mum,Ks,Qn,δ], tspan=(times[1], times[end]))
+        sol = solve(pr, solver; saveat=times, abstol=abstol, reltol=reltol)
+
+        N = sol[1, :]; P = sol[2, :]; D = sol[3, :]
+        nutr_paths[:, j]  = max.(N, 0.0)
+        dead_paths[:, j]  = max.(D, 0.0)
+        total_paths[:, j] = max.(P .+ D, 0.0)
+    end
+
+    # helpers
+    quant_band(M, q1, q2) = (mapslices(x->quantile(x,q1), M; dims=2)[:],
+                             mapslices(x->quantile(x,0.5), M; dims=2)[:],
+                             mapslices(x->quantile(x,q2), M; dims=2)[:])
+
+    loT, medT, hiT = quant_band(total_paths, ribbon_q[1], ribbon_q[2])
+    loD, medD, hiD = quant_band(dead_paths,  ribbon_q[1], ribbon_q[2])
+    loN, medN, hiN = quant_band(nutr_paths,  ribbon_q[1], ribbon_q[2])
+
+    # style for draws
+    draw_kwargs = (color=:gray, alpha=alpha_draws, lw=lw_draws, label=false)
+
+    # 1) Total (log)
+    p1 = plot(times, total_paths; draw_kwargs..., yscale=:log10,
+              xlabel="time", ylabel="observable 1", title="Observable 1: predictions vs observed",
+              legend=:topleft)
+    plot!(times, medT; color=ci_color, lw=2, label="median ± CI")
+    plot!(times, medT; ribbon=(medT .- loT, hiT .- medT), fillalpha=ci_alpha, fillcolor=ci_color, label="")
+    if obs_total !== nothing
+        scatter!(times, obs_total; color=:orange, ms=5, markerstrokecolor=:black, label="observed")
+    end
+
+    # 2) Dead (log)
+    p2 = plot(times, dead_paths; draw_kwargs..., yscale=:log10,
+              xlabel="time", ylabel="observable 2", title="Observable 2: predictions vs observed",
+              legend=:topleft)
+    plot!(times, medD; color=ci_color, lw=2, label="median ± CI")
+    plot!(times, medD; ribbon=(medD .- loD, hiD .- medD), fillalpha=ci_alpha, fillcolor=ci_color, label="")
+    if obs_dead !== nothing
+        scatter!(times, obs_dead; color=:orange, ms=5, markerstrokecolor=:black, label="observed")
+    end
+
+    # 3) Nutrients (linear)
+    p3 = plot(times, nutr_paths; draw_kwargs..., xlabel="time", ylabel="mmol N m⁻³",
+              title="Nutrients: predictions", legend=:topleft)
+    plot!(times, medN; color=ci_color, lw=2, label="median ± CI")
+    plot!(times, medN; ribbon=(medN .- loN, hiN .- medN), fillalpha=ci_alpha, fillcolor=ci_color, label="")
+
+    plot(p1, p2, p3; layout=(3,1), size=size, margin=8mm, left_margin=10mm, bottom_margin=8mm)
+end
