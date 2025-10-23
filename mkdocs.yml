@@ -1,7 +1,7 @@
-site_name: MCMCwithODEs_primer
+site_name: Baysian Inference for Biological ODEs
 site_description: Primer on Bayesian inference of ecological ODE models with Python (PyMC) and Julia (Turing.jl), with case studies.
 site_url: ""
-repo_name: MCMCwithODEs_primer
+repo_name: GitHub Repository
 repo_url: https://github.com/B2-Bayesian-for-Biology/MCMCwithODEs_primer
 
 theme:
@@ -37,9 +37,10 @@ markdown_extensions:
       permalink: true
   - pymdownx.details
   - pymdownx.superfences
-  - pymdownx.highlight
   - pymdownx.tabbed:
       alternate_style: true
+  - pymdownx.arithmatex:
+      generic: true
 
 extra_css:
   - https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css
@@ -49,10 +50,13 @@ extra_javascript:
   - https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js
   - https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js
   - javascripts/katex-init.js
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+
 
 nav:
   - Home: index.md
   - Education:
+      - "Mini Tutorial — 10 Steps": ten-steps.md
       - Python (PyMC):
           - "Case Study 1 — Birth–death dynamics": education/python/case_study_1.ipynb
           - "Case Study 2 — Priors, noise models, diagnostics": education/python/case_study_2.ipynb
