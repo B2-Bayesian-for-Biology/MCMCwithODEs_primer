@@ -1,6 +1,6 @@
 site_name: Baysian Inference for Biological ODEs
 site_description: Primer on Bayesian inference of ecological ODE models with Python (PyMC) and Julia (Turing.jl), with case studies.
-site_url: ""
+site_url: https://B2-Bayesian-for-Biology.github.io/MCMCwithODEs_primer/
 repo_name: GitHub Repository
 repo_url: https://github.com/B2-Bayesian-for-Biology/MCMCwithODEs_primer
 
