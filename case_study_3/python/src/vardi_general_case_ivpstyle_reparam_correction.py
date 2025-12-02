@@ -189,9 +189,9 @@ if __name__ == "__main__":
     # Default to False if not defined
     run_inference_flag = False
     plot_trace_flag = True
-    plot_convergence_flag = True
-    plot_posterior_pairs_flag = True
-    plot_dynamics_flag = True
+    plot_convergence_flag = False
+    plot_posterior_pairs_flag = False
+    plot_dynamics_flag = False
 
 
     try:
@@ -214,6 +214,7 @@ if __name__ == "__main__":
         model=model,
         fontname='Arial',
         fontsize=12,
+        uni=[],
         num_prior_samples=2000,
         var_names_map={'mu_max': 'Maximum Growth Rate μ (/day)', 'delta': 'Death Rate δ (/day)', 'Qn': 'Nutrient Quota Qn (ml/cell)', 'P0': 'Initial Live Density (/ml)', 'D0': 'Initial Dead Density (/ml)','sigma_live': 'σ for live cells', 'sigma_dead': 'σ for dead cells'},
         var_order=['mu_max','delta','Qn','P0','D0','sigma_live','sigma_dead'],

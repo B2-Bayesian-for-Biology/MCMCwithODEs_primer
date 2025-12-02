@@ -8,6 +8,7 @@ import sympy as sp
 from tqdm import tqdm
 from scipy.integrate import solve_ivp
 from matplotlib.ticker import AutoLocator, AutoMinorLocator, ScalarFormatter
+from scipy.stats import gaussian_kde, kstest
 
 '''
 This is preliminary. I will make it more general later.
@@ -39,7 +40,8 @@ def plot_trace(
     num_prior_samples=500,
     figsize=None,
     hspace=0.5,
-    wspace=0.3
+    wspace=0.3,
+    uni=None
 ):
     """
     Plot trace with variable renaming, ordering, font options, prior overlay,
@@ -105,33 +107,36 @@ def plot_trace(
 
                 # Add prior KDE if available
                 if (prior_idata is not None) and (var_names[i] in prior_idata.prior.data_vars):
-                    '''
-                    prior_vals = prior_idata.prior[var_names[i]].values.flatten()
-                    if prior_vals.size > 1:
-                        kde = gaussian_kde(prior_vals, bw_method=1.0)
-                        x_min, x_max = prior_vals.min(), prior_vals.max()
-                        x_pad = 0.05 * (x_max - x_min) if x_max > x_min else 1.0
-                        x_vals = np.linspace(x_min - x_pad, x_max + x_pad, 200)
-                        y_vals = kde(x_vals)
-                        ax.plot(x_vals, y_vals, color=prior_color, alpha=0.8, label='Prior KDE')
-                    '''
-                    # Replace your KDE block with this
-                    prior_vals = prior_idata.prior[var_names[i]].values.flatten()
-                    if prior_vals.size > 1:
-                        a = np.min(prior_vals)
-                        b = np.max(prior_vals)
-                        if np.isfinite(a) and np.isfinite(b) and b > a:
-                            # Draw a flat line for the uniform PDF
-                            height = 1.0 / (b - a)
-                            ax.hlines(height, a, b, color=prior_color, alpha=0.9, label='Prior (Uniform)')
-                            # (optional) mark vertical edges so it reads clearly
-                            ax.vlines([a, b], 0, height, color=prior_color, alpha=0.3, linestyle='--')
-                        else:
-                            # Fallback to KDE if degenerate
+        
+                    # KDE
+                    if var_names[i] not in uni:
+                        prior_vals = prior_idata.prior[var_names[i]].values.flatten()
+                        if prior_vals.size > 1:
                             kde = gaussian_kde(prior_vals, bw_method=1.0)
-                            x_vals = np.linspace(a, b, 200)
+                            x_min, x_max = prior_vals.min(), prior_vals.max()
+                            x_pad = 0.05 * (x_max - x_min) if x_max > x_min else 1.0
+                            x_vals = np.linspace(x_min - x_pad, x_max + x_pad, 200)
                             y_vals = kde(x_vals)
                             ax.plot(x_vals, y_vals, color=prior_color, alpha=0.8, label='Prior KDE')
+                    
+                    # Uniform 
+                    if var_names[i] in uni:
+                        prior_vals = prior_idata.prior[var_names[i]].values.flatten()
+                        if prior_vals.size > 1:
+                            a = np.min(prior_vals)
+                            b = np.max(prior_vals)
+                            if np.isfinite(a) and np.isfinite(b) and b > a:
+                                # Draw a flat line for the uniform PDF
+                                height = 1.0 / (b - a)
+                                ax.hlines(height, a, b, color=prior_color, alpha=0.9, label='Prior (Uniform)')
+                                # (optional) mark vertical edges so it reads clearly
+                                ax.vlines([a, b], 0, height, color=prior_color, alpha=0.3, linestyle='--')
+                            else:
+                                # Fallback to KDE if degenerate
+                                kde = gaussian_kde(prior_vals, bw_method=1.0)
+                                x_vals = np.linspace(a, b, 200)
+                                y_vals = kde(x_vals)
+                                ax.plot(x_vals, y_vals, color=prior_color, alpha=0.8, label='Prior KDE')
                     
             # Apply scientific notation (×10^n) to BOTH axes on every panel
             apply_sci_mathtext(ax)

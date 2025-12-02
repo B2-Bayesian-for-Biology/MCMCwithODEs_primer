@@ -29,7 +29,7 @@ N0_fixed = obs[0]
 # Define prior and likelihood
 # -------------------------------
 prior_mu = 0.5
-prior_sigma = 0.1
+prior_sigma = 0.3 #use 0.1
 prior_pdf = lambda x: norm.pdf(x, loc=prior_mu, scale=prior_sigma)
 
 sigma_obs = 0.2  # assumed measurement noise (log-scale)
@@ -96,6 +96,13 @@ plt.plot(mum_grid, posterior_vals, label="Posterior (Analytical)", lw=2)
 samples = trace.posterior["mum"].values.flatten()
 plt.hist(samples, bins=50, density=True, alpha=0.4, color="C3", label="Posterior (MCMC)")
 
+mean_samples = np.mean(samples)
+median_samples = np.median(samples)
+std_samples = np.std(samples)
+
+print(f"Mean: {mean_samples:.4f}")
+print(f"Median: {median_samples:.4f}")
+print(f"Standard Deviation: {std_samples:.4f}")
 plt.xlabel(r"$\mu$")
 plt.ylabel("Probability Density Function")
 plt.legend()

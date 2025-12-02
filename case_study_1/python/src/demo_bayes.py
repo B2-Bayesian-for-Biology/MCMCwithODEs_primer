@@ -86,6 +86,12 @@ plt.plot(mum_grid, posterior_vals, label="Posterior (analytical)", lw=2)
 samples = trace.posterior["mum"].values.flatten()
 plt.hist(samples, bins=50, density=True, alpha=0.4, color="C3", label="Posterior (MCMC)")
 
+mean_samples = np.mean(samples)
+std_samples = np.std(samples)
+
+print(f"Mean of samples: {mean_samples:.4f}")
+print(f"Standard deviation of samples: {std_samples:.4f}")
+
 plt.xlabel(r"$\mu$")
 plt.ylabel("Probability Density")
 plt.legend()

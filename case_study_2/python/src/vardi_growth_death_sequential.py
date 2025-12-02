@@ -155,7 +155,7 @@ if __name__ == "__main__":
     plot_trace_flag = True
     plot_convergence_flag = False
     plot_posterior_pairs_flag = False
-    plot_dynamics_flag = True
+    plot_dynamics_flag = False
 
 
     try:
@@ -181,6 +181,7 @@ if __name__ == "__main__":
         plot_trace(
         trace=trace,
         model=model,
+        uni=[],
         fontname='Arial',
         fontsize=20,
         num_prior_samples=2000,
