@@ -27,8 +27,6 @@ This repository accompanies our upcoming paper:
 
 ---
 
-**New to the workflow?** See the [Mini Tutorial — 10 Steps](ten-steps.md) for a concise, expandable walkthrough.
-
 ## 🚀 Quick start
 
 **Explore the case studies** from the sidebar:

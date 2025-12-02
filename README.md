@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17792668.svg)](https://doi.org/10.5281/zenodo.17792668)
+
 # 🧬 MCMCwithODEs_primer  
 ### **Bayesian Learning of Microbial Traits from Population Time Series Data: A Primer**
 

@@ -13,19 +13,19 @@
       
       
       
-      <link rel="icon" href="/assets/images/favicon.png">
+      <link rel="icon" href="../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.14">
     
     
       
-        <title>Baysian Inference for Biological ODEs</title>
+        <title>Mini Tutorial — 10 Steps of Bayesian Inference - Baysian Inference for Biological ODEs</title>
       
     
     
-      <link rel="stylesheet" href="/assets/stylesheets/main.342714a4.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.342714a4.min.css">
       
         
-        <link rel="stylesheet" href="/assets/stylesheets/palette.06af60db.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
       
       
 
@@ -46,9 +46,9 @@
     
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
     
-      <link rel="stylesheet" href="/stylesheets/overrides.css">
+      <link rel="stylesheet" href="../stylesheets/overrides.css">
     
-    <script>__md_scope=new URL("/",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -73,6 +73,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
+        
+        <a href="#mini-tutorial-10-steps-of-bayesian-inference" class="md-skip">
+          Skip to content
+        </a>
+      
     </div>
     <div data-md-component="announce">
       
@@ -85,7 +90,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="/." title="Baysian Inference for Biological ODEs" class="md-header__button md-logo" aria-label="Baysian Inference for Biological ODEs" data-md-component="logo">
+    <a href=".." title="Baysian Inference for Biological ODEs" class="md-header__button md-logo" aria-label="Baysian Inference for Biological ODEs" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 2h2v2c0 1.44.68 2.61 1.88 3.78.86.83 2.01 1.63 3.21 2.42l-1.83 1.19C8.27 10.72 7.31 10 6.5 9.21 5.07 7.82 4 6.1 4 4zm14 0h2v2c0 2.1-1.07 3.82-2.5 5.21-1.41 1.38-3.21 2.52-4.96 3.63-1.75 1.12-3.45 2.21-4.66 3.38C6.68 17.39 6 18.56 6 20v2H4v-2c0-2.1 1.07-3.82 2.5-5.21 1.41-1.38 3.21-2.52 4.96-3.63 1.75-1.12 3.45-2.21 4.66-3.38C17.32 6.61 18 5.44 18 4zm-3.26 10.61c.99.67 1.95 1.39 2.76 2.18C18.93 16.18 20 17.9 20 20v2h-2v-2c0-1.44-.68-2.61-1.88-3.78-.86-.83-2.01-1.63-3.21-2.42zM7 3h10v1l-.06.5H7.06L7 4zm.68 3h8.64c-.24.34-.52.69-.9 1.06l-.51.44H9.07l-.49-.44c-.38-.37-.66-.72-.9-1.06m1.41 10.5h5.84l.49.44c.38.37.66.72.9 1.06H7.68c.24-.34.52-.69.9-1.06zm-2.03 3h9.88l.06.5v1H7v-1z"/></svg>
@@ -105,7 +110,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              
+              Mini Tutorial — 10 Steps of Bayesian Inference
             
           </span>
         </div>
@@ -211,7 +216,7 @@
 
 <nav class="md-nav md-nav--primary md-nav--integrated" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="/." title="Baysian Inference for Biological ODEs" class="md-nav__button md-logo" aria-label="Baysian Inference for Biological ODEs" data-md-component="logo">
+    <a href=".." title="Baysian Inference for Biological ODEs" class="md-nav__button md-logo" aria-label="Baysian Inference for Biological ODEs" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 2h2v2c0 1.44.68 2.61 1.88 3.78.86.83 2.01 1.63 3.21 2.42l-1.83 1.19C8.27 10.72 7.31 10 6.5 9.21 5.07 7.82 4 6.1 4 4zm14 0h2v2c0 2.1-1.07 3.82-2.5 5.21-1.41 1.38-3.21 2.52-4.96 3.63-1.75 1.12-3.45 2.21-4.66 3.38C6.68 17.39 6 18.56 6 20v2H4v-2c0-2.1 1.07-3.82 2.5-5.21 1.41-1.38 3.21-2.52 4.96-3.63 1.75-1.12 3.45-2.21 4.66-3.38C17.32 6.61 18 5.44 18 4zm-3.26 10.61c.99.67 1.95 1.39 2.76 2.18C18.93 16.18 20 17.9 20 20v2h-2v-2c0-1.44-.68-2.61-1.88-3.78-.86-.83-2.01-1.63-3.21-2.42zM7 3h10v1l-.06.5H7.06L7 4zm.68 3h8.64c-.24.34-.52.69-.9 1.06l-.51.44H9.07l-.49-.44c-.38-.37-.66-.72-.9-1.06m1.41 10.5h5.84l.49.44c.38.37.66.72.9 1.06H7.68c.24-.34.52-.69.9-1.06zm-2.03 3h9.88l.06.5v1H7v-1z"/></svg>
@@ -241,7 +246,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/." class="md-nav__link">
+      <a href=".." class="md-nav__link">
         
   
   
@@ -346,7 +351,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/education/python/case_study_1/" class="md-nav__link">
+      <a href="../education/python/case_study_1/" class="md-nav__link">
         
   
   
@@ -369,7 +374,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/education/python/case_study_2/" class="md-nav__link">
+      <a href="../education/python/case_study_2/" class="md-nav__link">
         
   
   
@@ -392,7 +397,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/education/python/case_study_3/" class="md-nav__link">
+      <a href="../education/python/case_study_3/" class="md-nav__link">
         
   
   
@@ -463,7 +468,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/education/julia/case_study_1/" class="md-nav__link">
+      <a href="../education/julia/case_study_1/" class="md-nav__link">
         
   
   
@@ -486,7 +491,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/education/julia/case_study_2/" class="md-nav__link">
+      <a href="../education/julia/case_study_2/" class="md-nav__link">
         
   
   
@@ -509,7 +514,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/education/julia/case_study_3/" class="md-nav__link">
+      <a href="../education/julia/case_study_3/" class="md-nav__link">
         
   
   
@@ -547,7 +552,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/contributors/" class="md-nav__link">
+      <a href="../contributors/" class="md-nav__link">
         
   
   
@@ -574,8 +579,128 @@
             <div class="md-content" data-md-component="content">
               <article class="md-content__inner md-typeset">
                 
-  <h1>404 - Not found</h1>
+                  
 
+
+  
+  
+
+
+<h1 id="mini-tutorial-10-steps-of-bayesian-inference">🧭 Mini Tutorial: 10 Steps of Bayesian Inference<a class="headerlink" href="#mini-tutorial-10-steps-of-bayesian-inference" title="Permanent link">&para;</a></h1>
+<p>Individual Bayesian inverse modeling is case-specific, but this page summarizes the <strong>common workflow</strong> we follow in the primer. We illustrate with simple population models (exponential, logistic, and a Monod resource model).</p>
+<blockquote>
+<p><strong>Notation.</strong> Data <span class="arithmatex">\(\mathcal{D}\)</span>, parameters <span class="arithmatex">\(\theta\)</span>, likelihood <span class="arithmatex">\(\mathcal{L}(\mathcal{D}\mid\theta)\)</span>, prior <span class="arithmatex">\(P(\theta)\)</span>, posterior <span class="arithmatex">\(P(\theta\mid\mathcal{D})\)</span>.</p>
+</blockquote>
+<hr />
+<details class="summary" open="open">
+<summary>1) Visualize the data</summary>
+<p>Begin by plotting time series for each species/variable.<br />
+- Use <strong>log-scaled y-axes</strong> when densities span orders of magnitude.<br />
+- Early visualization guides <strong>model choice</strong> and highlights measurement scales and noise structure.</p>
+</details>
+<details class="summary" open="open">
+<summary>2) Choose a dynamical model</summary>
+<p>Qualitative trends inform the structure of your ODEs.</p>
+<p><strong>Exponential growth &amp; death (Malthusian):</strong>
+$$
+\frac{dP}{dt}=\mu P, \qquad
+\frac{dP}{dt}=(\mu-\delta)P
+$$
+where <span class="arithmatex">\(P\)</span> is cell density, <span class="arithmatex">\(\mu\)</span> growth rate, <span class="arithmatex">\(\delta\)</span> death rate.</p>
+<p><strong>Logistic growth (with death):</strong>
+$$
+\frac{dP}{dt}=rP!\left(1-\frac{P}{K}\right)-\delta P, \qquad
+\frac{dD}{dt}=\delta P
+$$
+with intrinsic rate <span class="arithmatex">\(r\)</span>, carrying capacity <span class="arithmatex">\(K\)</span>, live cells <span class="arithmatex">\(P\)</span>, dead cells <span class="arithmatex">\(D\)</span>.</p>
+<p><strong>Monod (resource-explicit) growth with death:</strong>
+$$
+\begin{aligned}
+\frac{dN}{dt}&amp;=-\frac{Q_N\,\mu_{\max}N}{N+K_S}\,\big(P\times10^6\big) \\
+\frac{dP}{dt}&amp;=\frac{\mu_{\max}N}{N+K_S}\,P-\delta P \\
+\frac{dD}{dt}&amp;=\delta P
+\end{aligned}
+$$
+where <span class="arithmatex">\(N\)</span> is nutrient, <span class="arithmatex">\(Q_N\)</span> cellular quota, <span class="arithmatex">\(\mu_{\max}\)</span> max growth rate, and <span class="arithmatex">\(K_S\)</span> half-saturation.</p>
+</details>
+<details class="summary" open="open">
+<summary>3) Define the likelihood</summary>
+<p>The likelihood <span class="arithmatex">\(\mathcal{L}(\mathcal{D}\mid\theta)\)</span> measures compatibility of model and data.<br />
+- Common choice: <strong>Gaussian errors</strong> (possibly on a log scale) with equal weights across observations.<br />
+- When variables are <strong>latent</strong> (unobserved), build the likelihood only over observed variables.<br />
+- With equal weights, <span class="arithmatex">\(\log\mathcal{L}\)</span> reduces to <strong>sum of squared errors</strong> plus noise terms.</p>
+</details>
+<details class="summary" open="open">
+<summary>4) Select parameters to fit</summary>
+<p>Include dynamic parameters, initial conditions, and observation noise.<br />
+- For strong <strong>posterior covariance</strong>, consider <strong>reparameterization</strong> and fit independent parameters only.<br />
+- Keep units and identifiability in mind.</p>
+</details>
+<details class="summary" open="open">
+<summary>5) Choose priors</summary>
+<p>Use literature, physics, and bounds to set priors.<br />
+- <strong>Normal / Log-Normal</strong> for parameters spanning orders of magnitude.<br />
+- <strong>Uniform</strong> for weakly informative ranges.<br />
+- <strong>Half-Normal</strong> (or Half-Cauchy) for <strong>positive</strong> noise scales.<br />
+- Apply <strong>truncation</strong> to enforce positivity (e.g., growth/death rates).</p>
+</details>
+<details class="summary" open="open">
+<summary>6) Pick sampler and ODE solver</summary>
+<ul>
+<li>For smooth models with gradients, <strong>HMC/NUTS</strong> is efficient; needs Jacobians/AD support.  </li>
+<li>For <strong>stiff ODEs</strong> or tricky gradients, <strong>Metropolis</strong> (or other gradient-free samplers) with robust solvers (e.g., <code>solve_ivp</code>) can be preferable.  </li>
+<li>In PyMC, you can use <code>DifferentialEquation</code> for coupled ODE integration within sampling.</li>
+</ul>
+</details>
+<details class="summary" open="open">
+<summary>7) Sample the posteriors</summary>
+<p>Bayes’ rule:
+$$
+P(\theta\mid\mathcal{D}) \propto \mathcal{L}(\mathcal{D}\mid\theta)\,P(\theta)
+$$
+Practical tips:
+- <strong>Prior predictive checks</strong> to validate priors before seeing data.<br />
+- <strong>Warm-up/burn-in</strong> long enough for adaptation (more for high-dim models).<br />
+- <strong>Draws &amp; chains</strong>: target <span class="arithmatex">\(\ge\)</span> 1000 effective samples per parameter.<br />
+- <strong>Acceptance rate</strong>: tune as needed (e.g., PyMC default ~0.8; can increase toward 0.95 if convergence requires it).</p>
+</details>
+<details class="summary" open="open">
+<summary>8) Inspect posterior distributions</summary>
+<ul>
+<li>Use <strong>marginals</strong> and <strong>corner plots</strong> to assess shape, multimodality, and correlations.  </li>
+<li>Strong correlations → consider <strong>reparameterization</strong> or model refinement.  </li>
+<li>Report credible intervals and posterior summaries with context.</li>
+</ul>
+</details>
+<details class="summary" open="open">
+<summary>9) Convergence diagnostics</summary>
+<p>Ensure reliable exploration before interpreting results:<br />
+- <strong><span class="arithmatex">\(\hat R\)</span> (Gelman–Rubin)</strong> close to 1 (e.g., &lt; 1.01).<br />
+- <strong>Autocorrelation</strong> decays quickly (e.g., &lt; 0.1 by ~50 lags).<br />
+- <strong>ESS (bulk &amp; tail)</strong> sufficiently large (e.g., &gt; 300).</p>
+</details>
+<details class="summary" open="open">
+<summary>10) Posterior predictive simulation</summary>
+<p>Propagate posterior draws through the ODE to generate <strong>predictive trajectories</strong>.<br />
+- Compare to data for <strong>model fit</strong>.<br />
+- Use spread to <strong>quantify predictive uncertainty</strong> in dynamics.</p>
+</details>
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
               </article>
             </div>
           
@@ -611,16 +736,16 @@
     
     
       
-      <script id="__config" type="application/json">{"base": "/", "features": ["navigation.instant", "navigation.sections", "navigation.tracking", "search.suggest", "search.highlight", "content.code.copy", "toc.integrate"], "search": "/assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.instant", "navigation.sections", "navigation.tracking", "search.suggest", "search.highlight", "content.code.copy", "toc.integrate"], "search": "../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="/assets/javascripts/bundle.13a4f30d.min.js"></script>
+      <script src="../assets/javascripts/bundle.13a4f30d.min.js"></script>
       
         <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
       
         <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"></script>
       
-        <script src="/javascripts/katex-init.js"></script>
+        <script src="../javascripts/katex-init.js"></script>
       
         <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
       
