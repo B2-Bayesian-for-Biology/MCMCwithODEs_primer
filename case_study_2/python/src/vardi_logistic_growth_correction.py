@@ -130,10 +130,10 @@ if __name__ == "__main__":
     
     # Default to False if not defined
     run_inference_flag = False
-    plot_trace_flag = False
+    plot_trace_flag = True
     plot_convergence_flag = False
     plot_posterior_pairs_flag = False
-    plot_dynamics_flag = True
+    plot_dynamics_flag = False
 
     
 
@@ -156,7 +156,17 @@ if __name__ == "__main__":
     trace = az.from_netcdf(file_path)
 
 
-    if plot_trace_flag:    
+    if plot_trace_flag:   
+        plot_trace(trace=trace,
+           model=model,
+           uni=[],
+           fontname='Arial',
+           fontsize=12,
+           num_prior_samples=200,
+           #save_path='figures/vardi_logistic_growth_chains.png'
+           )
+
+        """ 
         plot_trace(
         trace=trace,
         model=model,
@@ -164,7 +174,7 @@ if __name__ == "__main__":
         fontsize=12,
         num_prior_samples=200,
         save_path='../figures/vardi_logistic_growth_chains_corrected.png'
-        )
+        )"""
         
     
     if plot_posterior_pairs_flag:

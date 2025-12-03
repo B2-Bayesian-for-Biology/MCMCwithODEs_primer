@@ -117,8 +117,8 @@ bootstrap_std = np.std(bootstrap_estimates)
 
 # Method names and values
 methods = ['Least Squares', 'MLE', 'MAP', 'Bootstrap', 'Posterior Mean']
-estimates = [mum_lsq, mum_mle, mum_map, bootstrap_mean, posterior_mean]
-errors = [0, 0, 0, bootstrap_std, posterior_std]  # Only last two have error bars
+estimates = [mum_lsq, mum_mle, 0.2513 , bootstrap_mean,0.2509]  #posterior_mean mum_map
+errors = [0, 0, 0, bootstrap_std, 0.0390]  # Only last two have error bars posterior_std
 
 # Plot
 plt.figure(figsize=(10, 6))

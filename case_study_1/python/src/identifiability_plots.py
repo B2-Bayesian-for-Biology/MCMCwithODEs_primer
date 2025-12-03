@@ -10,9 +10,11 @@ axs = axs.flatten()
 
 # Loop over sigma_delta values
 for i, sd in enumerate([0.01, 0.05, 0.1, 0.2, 0.3]):
-    axs[i].set_title(f"σ of δ = {sd}")
-    axs[i].set_xlabel("μ and δ (/day)")
-    axs[i].set_ylabel("PDF")
+    print(f"Processing σ of δ = {sd}")
+    axs[i].set_title(f"σ of δ = {sd}", fontsize=20)
+    axs[i].set_xlabel("μ and δ (/day)", fontsize=20)
+    axs[i].set_ylabel("PDF", fontsize=20)
+    axs[i].tick_params(axis='both', labelsize=18)
     #axs[i].grid(True)
 
     # Load trace
@@ -29,7 +31,7 @@ for i, sd in enumerate([0.01, 0.05, 0.1, 0.2, 0.3]):
     prior_pdf = np.exp(pm.logp(delta_prior_dist, x).eval())
 
     axs[i].plot(x, prior_pdf, color='black', label='Prior of δ', linewidth=2)
-    axs[i].legend()
+    axs[i].legend(fontsize=18)
 
 # Hide unused subplot
 if len(axs) > len([0.01, 0.05, 0.1, 0.2, 0.3]):

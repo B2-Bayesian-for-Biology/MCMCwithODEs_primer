@@ -1,6 +1,6 @@
 site_name: Baysian Inference for Biological ODEs
 site_description: Primer on Bayesian inference of ecological ODE models with Python (PyMC) and Julia (Turing.jl), with case studies.
-site_url: ""
+site_url: https://B2-Bayesian-for-Biology.github.io/MCMCwithODEs_primer/
 repo_name: GitHub Repository
 repo_url: https://github.com/B2-Bayesian-for-Biology/MCMCwithODEs_primer
 
@@ -56,12 +56,13 @@ extra_javascript:
 nav:
   - Home: index.md
   - Education:
-      - "Mini Tutorial — 10 Steps": ten-steps.md
+      #- "Mini Tutorial — 10 Steps": ten-steps.md
       - Python (PyMC):
           - "Case Study 1 — Birth–death dynamics": education/python/case_study_1.ipynb
-          - "Case Study 2 — Priors, noise models, diagnostics": education/python/case_study_2.ipynb
-          - "Case Study 3 — Posterior inference & interpretation": education/python/case_study_3.ipynb
+          - "Case Study 2 — Logistic growth and death": education/python/case_study_2.ipynb
+          - "Case Study 3 — Resource explicit Monod growth and death": education/python/case_study_3.ipynb
       - Julia (Turing.jl):
           - "Case Study 1 — Birth–death dynamics": education/julia/case_study_1.ipynb
-          - "Case Study 2 — Priors, noise models, diagnostics": education/julia/case_study_2.ipynb
+          - "Case Study 2 — Logistic growth and death": education/julia/case_study_2.ipynb
+          - "Case Study 3 — Resource explicit Monod growth and death": education/julia/case_study_3.ipynb
   - Contributors: contributors.md
