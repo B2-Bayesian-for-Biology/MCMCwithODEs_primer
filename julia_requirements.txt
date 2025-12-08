@@ -1,0 +1,17 @@
+Julia v1.11.0
+[80f14c24] AbstractMCMC v5.7.2
+[5b7e9947] AdvancedMH v0.8.8
+[336ed68f] CSV v0.10.15
+[a93c6f00] DataFrames v1.7.1
+[0c46a032] DifferentialEquations v7.16.1
+[31c24e10] Distributions v0.25.120
+[7073ff75] IJulia v1.30.2
+[9da8a3cd] JLSO v2.7.0
+[c7f686f2] MCMCChains v7.2.0
+[442fdcdd] Measures v0.3.2
+[91a5bcdd] Plots v1.40.20
+[1ed8b502] SciMLSensitivity v7.90.0
+[2913bbd2] StatsBase v0.34.7
+[f3b207a7] StatsPlots v0.15.7
+[fce5fe82] Turing v0.40.2
+[9a3f8284] Random v1.11.0
