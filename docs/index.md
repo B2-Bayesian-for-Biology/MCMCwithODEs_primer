@@ -31,13 +31,14 @@ This repository accompanies our upcoming paper:
 
 **Explore the case studies** from the sidebar:
 - **Python (PyMC)** → Case Study 1–3  
-- **Julia (Turing.jl)** → Case Study 1–2
-
-Or jump directly:
-
 - [Case Study 1 — Exponential Growth and Death](education/python/case_study_1.ipynb)
 - [Case Study 2 — Logistic Growth and Death](education/python/case_study_2.ipynb)
 - [Case Study 3 — Monod Growth and Death](education/python/case_study_3.ipynb)
+
+- **Julia (Turing.jl)** → Case Study 1–3
+- [Case Study 1 — Exponential Growth and Death](education/julia/case_study_1.ipynb)
+- [Case Study 2 — Logistic Growth and Death](education/julia/case_study_2.ipynb)
+- [Case Study 3 — Monod Growth and Death](education/julia/case_study_3.ipynb)
 
 ---
 
@@ -66,11 +67,15 @@ This primer was developed through a collaborative effort across multiple researc
 **Ioannis Sgouralis** — University of Tennessee, Knoxville  
 🔗 [Website](https://math.utk.edu/labs/sgouralis/)
 
-**Stephen J. Beckett** —  University of Maryland 
+**Stephen J. Beckett** —  University of Maryland  🔗 [Website](https://sjbeckett.github.io)
+
 
 **Paul Frémont** —  University of Maryland 
+🔗 [Website](https://www.paulfremont.com)
 
-**David Demory** — CNRS / Université Paris-Saclay  
+**David Demory** — Sorbone University 
+🔗 [Website](https://usr3579.obs-banyuls.fr/fr/axe-genophy/membres-permanents/daviddemory.html)
+
 
 **Eric Carr** — University of Tennessee, Knoxville  
 
