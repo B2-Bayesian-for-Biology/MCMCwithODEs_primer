@@ -15,11 +15,15 @@ This primer was developed through a collaborative effort across multiple researc
 **Ioannis Sgouralis** — University of Tennessee, Knoxville  
 🔗 [Website](https://math.utk.edu/labs/sgouralis/)
 
-**Stephen J. Beckett** —  University of Maryland 
+**Stephen J. Beckett** —  University of Maryland  🔗 [Website](https://sjbeckett.github.io)
+
 
 **Paul Frémont** —  University of Maryland 
+🔗 [Website](https://www.paulfremont.com)
 
-**David Demory** — CNRS / Université Paris-Saclay  
+**David Demory** — Sorbone University 
+🔗 [Website](https://usr3579.obs-banyuls.fr/fr/axe-genophy/membres-permanents/daviddemory.html)
+
 
 **Eric Carr** — University of Tennessee, Knoxville  
 
