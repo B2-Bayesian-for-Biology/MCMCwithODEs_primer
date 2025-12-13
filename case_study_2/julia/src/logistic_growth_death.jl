@@ -1,9 +1,11 @@
-## Cell 5 ##
+
+# For user-defined post processing and plotting functions
+include(joinpath(@__DIR__, "..", "..", "..", "utils", "plot_utils.jl"))
 
 using CSV, DataFrames
 
-cells = CSV.read("../../../case_study_2/python/data/total_cells.csv", DataFrame)
-death = CSV.read("../../../case_study_2/python/data/death_percentage.csv", DataFrame)
+cells = CSV.read("../data/total_cells.csv", DataFrame)
+death = CSV.read("../data/death_percentage.csv", DataFrame)
 
 cells_times  = cells[end-14:end, :1]
 cells_obs    = cells[end-14:end, :2] * 1e6
@@ -12,8 +14,6 @@ log_cells_obs = log.(cells_obs .+ 1e-9)
 death_times = death[end-14:end, :1]
 death_obs   = death[end-14:end, :2] .* (cells_obs ./ 100)
 log_death_obs = log.(death_obs .+ 1e-9)
-
-## Cell 6 ##
 
 function ode(du, u, p, t)
     P, D = u
@@ -24,8 +24,6 @@ function ode(du, u, p, t)
 
     return nothing
 end
-
-## Cell 7 ##
 
 using Turing
 
@@ -59,8 +57,6 @@ using Turing
 
 end
 
-## Cell 8 ##
-
 using DifferentialEquations
 
 u0 = [log_cells_obs[1], log_death_obs[1]]
@@ -69,7 +65,7 @@ tspan = (cells_times[1], cells_times[end])
 prob = ODEProblem(ode, u0, tspan, p)
 
 model    = fit_ode(log_cells_obs, log_death_obs, cells_times, prob)
-chain    = sample(model, NUTS(1000, .95), MCMCSerial(), 1000, 4; progress=false)
+chain    = sample(model, NUTS(1000, .95), MCMCSerial(), 1000, 4; progress=true)
  
 
 priors = Dict{Symbol,Distribution}(
@@ -84,14 +80,15 @@ priors = Dict{Symbol,Distribution}(
 
 order = [:r, :K, :delta, :P0, :D0, :sigma_live, :sigma_dead]
 
-plot_trace_with_priors(chain; priors=priors, var_order=order, per_chain_density=true)  # also per-chain densities
+p1 = plot_trace_with_priors(chain; priors=priors, var_order=order, per_chain_density=true)  # also per-chain densities
+savefig(p1, "../figures/logistic_growth_death_trace.png")
 
 init_syms = [:P0, :D0]
 param_syms = [:r, :K, :delta]
 t_obs = cells_times
 y_obs = hcat(cells_obs, death_obs)
 
-plt = overlay_posterior_on_observed(
+p2 = overlay_posterior_on_observed(
     chain, ode, t_obs, y_obs;
     init_syms=init_syms,
     param_syms=param_syms,
@@ -103,5 +100,5 @@ plt = overlay_posterior_on_observed(
     ribbon_q=(0.1, 0.9),    # CI limits
     logy=false
 )
-display(plt)
+savefig(p2, "../figures/logistic_growth_death_posterior.png")
 

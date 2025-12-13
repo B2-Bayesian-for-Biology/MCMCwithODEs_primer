@@ -57,8 +57,8 @@ end
 @everywhere using CSV, DataFrames, DifferentialEquations
 
 @everywhere begin
-    cells = CSV.read("../../../case_study_2/python/data/total_cells.csv", DataFrame)
-    death = CSV.read("../../../case_study_2/python/data/death_percentage.csv", DataFrame)
+    cells = CSV.read("../data/total_cells.csv", DataFrame)
+    death = CSV.read("../data/death_percentage.csv", DataFrame)
 
     cells_times  = cells[end-14:end, :1]
     cells_obs    = cells[end-14:end, :2] * 1e6
@@ -93,12 +93,13 @@ priors = Dict{Symbol,Distribution}(
 
 order = [:mum, :Ks, :Qn, :delta, :P0, :D0, :sigma_live, :sigma_dead]
 
-plot_trace_with_priors(chain; priors=priors, var_order=order, per_chain_density=true)  # also per-chain densities
+p1 = plot_trace_with_priors(chain; priors=priors, var_order=order, per_chain_density=true)  # also per-chain densities
+savefig(p1, "../figures/case_study_3_trace.png")
 
-fig = plot_posterior_states_stacked(
+p2 = plot_posterior_states_stacked(
     chain, prob, cells_times;
     n_draws=150, ribbon_q=(0.05,0.95),
     obs_total=cells_obs, obs_dead=death_obs
 )
-display(fig)
+savefig(p2, "../figures/case_study_3_posterior.png")
 
