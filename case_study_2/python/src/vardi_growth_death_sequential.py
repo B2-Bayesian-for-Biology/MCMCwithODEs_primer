@@ -153,8 +153,8 @@ if __name__ == "__main__":
 
     run_inference_flag = False
     plot_trace_flag = True
-    plot_convergence_flag = False
-    plot_posterior_pairs_flag = False
+    plot_convergence_flag = True
+    plot_posterior_pairs_flag = True
     plot_dynamics_flag = False
 
 
@@ -181,11 +181,18 @@ if __name__ == "__main__":
         plot_trace(
         trace=trace,
         model=model,
-        uni=[],
+        uni=["$\delta$ (death rate)"],
+           
+        var_order = ["$r$ (growth rate)", "$K$ (carrying capacity)", "$\delta$ (death rate)", "$P_0$ (init. live)", "$D_0$ (init. dead)","$\sigma_L$", "$\sigma_D$"],
+        var_names_map = {"$r$ (growth rate)":'Growth Rate, r (/day)', "$K$ (carrying capacity)":"Carrying capacity, K (/ml)", "$P_0$ (init. live)":r'Init. living cells, $P_0$ (/ml)',
+                         "$D_0$ (init. dead)":r'Init. dead cells, $D_0$ (/ml)',"$\sigma_L$":"Standard Deviation, $\sigma_{LL,1}$","$\sigma_D$":"Standard Deviation, $\sigma_{LL,2}$",
+                         "$\delta$ (death rate)":"Death Rate, δ (/day)"},
         fontname='Arial',
-        fontsize=20,
+        fontsize=15,
         num_prior_samples=2000,
-        save_path='../figures/vardi_growth_death_chains_seq.png'
+        hspace=0.8,
+        wspace=0.3,
+        save_path='../figures/vardi_growth_death_chains_seq.svg'
         )
         
     
@@ -194,11 +201,14 @@ if __name__ == "__main__":
         trace,
         plot_kind="kde",
         fontname="Arial",
-        fontsize=10,
-        figsize=(20, 10),
-        hspace=0.5,
-        wspace=0.2,
-        save_path='../figures/vardi_growth_death_posterior_seq.png'
+        fontsize=15,
+        figsize=(20, 20),
+        var_names_map = {"$r$ (growth rate)":'Growth Rate, r (/day)', "$K$ (carrying capacity)":"Carrying capacity, K (/ml)", "$P_0$ (init. live)":r'Init. living cells, $P_0$ (/ml)',
+                         "$D_0$ (init. dead)":r'Init. dead cells, $D_0$ (/ml)',"$\sigma_L$":"Standard Deviation, $\sigma_{LL,1}$","$\sigma_D$":"Standard Deviation, $\sigma_{LL,2}$",
+                         "$\delta$ (death rate)":"Death Rate, δ (/day)"},
+        hspace=0.3,
+        wspace=0.3,
+        save_path='../figures/vardi_growth_death_posterior_seq.svg'
         )
    
     
@@ -212,8 +222,11 @@ if __name__ == "__main__":
         show_geweke=False,
         hspace=0.8,
         combine_chains = False,
+        var_names_map = {"$r$ (growth rate)":'Growth Rate, r (/day)', "$K$ (carrying capacity)":"Carrying capacity, K (/ml)", "$P_0$ (init. live)":r'Init. living cells, $P_0$ (/ml)',
+                         "$D_0$ (init. dead)":r'Init. dead cells, $D_0$ (/ml)',"$\sigma_L$":"Standard Deviation, $\sigma_{LL,1}$","$\sigma_D$":"Standard Deviation, $\sigma_{LL,2}$",
+                         "$\delta$ (death rate)":"Death Rate, δ (/day)"},
         figsize=(10, 10),
-        save_path="../figures/vardi_growth_death_convergence_seq.png"
+        save_path="../figures/vardi_growth_death_convergence_seq.svg"
         )
         
     

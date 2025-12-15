@@ -1,5 +1,5 @@
 from .plot_utils_v2 import plot_trace, plot_posterior_pairs, plot_convergence, posterior_dynamics, posterior_dynamics_solve_ivp, posterior_dynamics_solve_ivp_flexible
-
+from .chain_utils import summarize_trace_table, summarize_trace_nc
 # the following works with the old tract plot
 #from .plot_utils import plot_trace, plot_posterior_pairs, plot_convergence, posterior_dynamics, posterior_dynamics_solve_ivp, posterior_dynamics_solve_ivp_flexible
 

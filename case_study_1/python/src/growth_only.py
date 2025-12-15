@@ -57,7 +57,7 @@ def build_pymc_model(time, obs):
 
     with pm.Model() as model:
         # Priors
-        mum = pm.Normal('mum', mu=0.5, sigma=0.3)
+        mum = pm.Normal('mum', mu=0.5, sigma=0.3, lower=0, upper=1.0)
         N0 = pm.Lognormal('N0', mu=np.log(obs[0]), sigma=0.1)
         sigma = pm.HalfNormal("sigma", 1)
 
@@ -119,27 +119,30 @@ if __name__ == "__main__":
         plot_trace(
         trace=trace,
         model=model,
-        var_names_map={'N0':'Initial density/ml','mum': 'Growth Rate μ', 'sigma': 'Std Dev σ'},
+        uni=[],
+        var_names_map={'N0':r'Initial density, $P_0$ (/ml)','mum': 'Growth Rate, μ (/day)', 'sigma': 'Standard Deviation, σ'},
         var_order=['mum','N0','sigma'],
         fontname='Arial',
-        fontsize=12,
+        fontsize=15,
         num_prior_samples=2000,
-        save_path='../figures/normal_growth_chains.png'
+        hspace=0.8,
+        wspace=0.3,
+        save_path='../figures/normal_growth_chains.svg'
         )
     
     if plot_posterior_pairs_flag:
         plot_posterior_pairs(
         trace,
         var_names=["mum", "N0", "sigma"],
-        var_names_map={"mum": "Growth Rate μ", "N0": "Initial density/ml", "sigma": "Std Dev σ"},
+        var_names_map={'N0':r'Initial density, $P_0$ (/ml)','mum': 'Growth Rate, μ (/day)', 'sigma': 'Standard Deviation, σ'},
         var_order=["mum", "N0", "sigma"],
         plot_kind="kde",
         fontname="Arial",
-        fontsize=12,
+        fontsize=15,
         figsize=(10, 10),
         hspace=0.3,
         wspace=0.3,
-        save_path="../figures/normal_growth_posterior.png"
+        save_path="../figures/normal_growth_posterior.svg"
         )
    
     
@@ -148,7 +151,7 @@ if __name__ == "__main__":
         trace,
         var_names=["mum", "N0", "sigma"],
         var_order=["mum", "N0", "sigma"],
-        var_names_map={"mum": "Growth Rate μ", "N0": "Initial density/ml", "sigma": "Std Dev σ"},
+        var_names_map={'N0':r'Initial density, $P_0$ (/ml)','mum': 'Growth Rate, μ (/day)', 'sigma': 'Standard Deviation, σ'},
         thin=1,
         fontname="Arial",
         fontsize=15,
@@ -156,7 +159,7 @@ if __name__ == "__main__":
         show_geweke=False,
         hspace=0.8,
         combine_chains = False,
-        save_path="../figures/normal_growth_convergence.png"
+        save_path="../figures/normal_growth_convergence.svg"
         )
 
     if plot_dynamics_flag:

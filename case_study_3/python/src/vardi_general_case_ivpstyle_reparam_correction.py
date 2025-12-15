@@ -188,9 +188,9 @@ if __name__ == "__main__":
 
     # Default to False if not defined
     run_inference_flag = False
-    plot_trace_flag = True
+    plot_trace_flag = False
     plot_convergence_flag = False
-    plot_posterior_pairs_flag = False
+    plot_posterior_pairs_flag = True
     plot_dynamics_flag = False
 
 
@@ -213,12 +213,18 @@ if __name__ == "__main__":
         trace=trace,
         model=model,
         fontname='Arial',
-        fontsize=12,
-        uni=[],
+        fontsize=15,
         num_prior_samples=2000,
-        var_names_map={'mu_max': 'Maximum Growth Rate μ (/day)', 'delta': 'Death Rate δ (/day)', 'Qn': 'Nutrient Quota Qn (ml/cell)', 'P0': 'Initial Live Density (/ml)', 'D0': 'Initial Dead Density (/ml)','sigma_live': 'σ for live cells', 'sigma_dead': 'σ for dead cells'},
+        uni=["mu_max", "Ks", "Qn", "delta"],
+        #var_names_map={'mu_max': 'Maximum Growth Rate μ (/day)', 'delta': 'Death Rate δ (/day)', 'Qn': 'Nutrient Quota Qn (ml/cell)', 'P0': 'Initial Live Density (/ml)', 'D0': 'Initial Dead Density (/ml)','sigma_live': 'σ for live cells', 'sigma_dead': 'σ for dead cells'},
         var_order=['mu_max','delta','Qn','P0','D0','sigma_live','sigma_dead'],
-        save_path='../figures/vardi_general_chains_reparam_corr.png'
+        hspace=0.8,
+        wspace=0.3,
+        var_names_map = {"mu_max":r'Maximum growth rate, $μ_{max}$ (/day)', "Ks":r"Half saturation constant mmol$/m^3$ ", "P0":r'Init. living cells, $P_0$ (/ml)',
+                         "D0":r'Init. dead cells, $D_0$ (/ml)',"sigma_live":"Standard Deviation, $\sigma_{LL,1}$","sigma_dead":"Standard Deviation, $\sigma_{LL,2}$",
+                         "delta":"Death Rate, δ (/day)",'Qn': 'Nutrient Quota Qn (mmol N/cell)'},
+        
+        save_path='../figures/vardi_general_chains_reparam_corr.svg'
         )
     
     
@@ -227,13 +233,19 @@ if __name__ == "__main__":
         trace,
         plot_kind="kde",
         fontname="Arial",
-        fontsize=10,
-        figsize=(20, 10),
-        var_names_map={'mu_max': 'Maximum Growth Rate μ (/day)', 'delta': 'Death Rate δ (/day)', 'Qn': 'Nutrient Quota Qn (ml/cell)', 'P0': 'Initial Live Density (/ml)', 'D0': 'Initial Dead Density (/ml)','sigma_live': 'σ for live cells', 'sigma_dead': 'σ for dead cells'},
+        fontsize=12,
+        figsize=(10, 10),
+        #var_names_map = {"mu_max":r'Maximum growth rate, $μ_{max}$ (/day)', "Ks":r"Half saturation constant mmol$/m^3$ ", "P0":r'Init. living cells, $P_0$ (/ml)',
+         #                "D0":r'Init. dead cells, $D_0$ (/ml)',"sigma_live":"Standard Deviation, $\sigma_{LL,1}$","sigma_dead":"Standard Deviation, $\sigma_{LL,2}$",
+         #                "delta":"Death Rate, δ (/day)",'Qn': 'Nutrient Quota Qn (mmol N/cell)'},
+        var_names_map = {"mu_max":'', "Ks":'', "P0":'',
+                        "D0":'',"sigma_live":'',"sigma_dead":'',
+                        "delta":"",'Qn': ""},
+        
         var_order=['mu_max','delta','Qn','P0','D0','sigma_live','sigma_dead'],
-        hspace=0.5,
-        wspace=0.2,
-        save_path='../figures/vardi_general_posterior_reparam_corr.png'
+        hspace=0.3,
+        wspace=0.3,
+        save_path='../figures/vardi_general_posterior_reparam_corr.svg'
         )
    
     
@@ -247,8 +259,12 @@ if __name__ == "__main__":
             hspace=0.8,
             thin = 50,
             combine_chains = False,
+            var_names_map = {"mu_max":r'Maximum growth rate, $μ_{max}$ (/day)', "Ks":r"Half saturation constant mmol$/m^3$ ", "P0":r'Init. living cells, $P_0$ (/ml)',
+                         "D0":r'Init. dead cells, $D_0$ (/ml)',"sigma_live":"Standard Deviation, $\sigma_{LL,1}$","sigma_dead":"Standard Deviation, $\sigma_{LL,2}$",
+                         "delta":"Death Rate, δ (/day)",'Qn': 'Nutrient Quota Qn (mmol N/cell)'},
+        
             figsize=(10, 10),
-            save_path="../figures/vardi_general_convergence_reparam_corr.png"
+            save_path="../figures/vardi_general_convergence_reparam_corr.svg"
             )
         
     

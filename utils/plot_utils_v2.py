@@ -94,7 +94,18 @@ def plot_trace(
 
             # Titles
             if i < len(labels):
-                ax.set_title(labels[i], fontname=fontname, fontsize=fontsize)
+                ax.set_xlabel(labels[i], fontsize=fontsize, fontname=fontname)
+                ax.set_title("", fontname=fontname, fontsize=fontsize)
+                # Joshua told to put in at the bottom!
+                #ax.set_title(labels[i], fontname=fontname, fontsize=fontsize)
+
+            # adding on Dec 14
+            if j == 1:
+                ax.set_xlabel("", fontsize=fontsize, fontname=fontname)
+                ax.set_ylabel('Samples', fontsize=fontsize, fontname=fontname)
+                if i < len(labels):
+                    ax.set_title(labels[i], fontname=fontname, fontsize=fontsize)
+                    
 
             # Ensure ticks visible on left panels and label y as Density
             if j == 0:
@@ -103,7 +114,8 @@ def plot_trace(
                 ax.yaxis.set_ticks_position('left')
                 ax.yaxis.set_major_locator(AutoLocator())
                 ax.yaxis.set_minor_locator(AutoMinorLocator())
-                ax.set_ylabel("Density", fontsize=fontsize, fontname=fontname)
+                ax.set_ylabel("PDF", fontsize=fontsize, fontname=fontname)
+                
 
                 # Add prior KDE if available
                 if (prior_idata is not None) and (var_names[i] in prior_idata.prior.data_vars):
@@ -138,6 +150,7 @@ def plot_trace(
                                 y_vals = kde(x_vals)
                                 ax.plot(x_vals, y_vals, color=prior_color, alpha=0.8, label='Prior KDE')
                     
+            
             # Apply scientific notation (×10^n) to BOTH axes on every panel
             apply_sci_mathtext(ax)
 

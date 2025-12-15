@@ -131,8 +131,8 @@ if __name__ == "__main__":
     # Default to False if not defined
     run_inference_flag = False
     plot_trace_flag = True
-    plot_convergence_flag = False
-    plot_posterior_pairs_flag = False
+    plot_convergence_flag = True
+    plot_posterior_pairs_flag = True
     plot_dynamics_flag = False
 
     
@@ -159,11 +159,16 @@ if __name__ == "__main__":
     if plot_trace_flag:   
         plot_trace(trace=trace,
            model=model,
-           uni=[],
+           var_order = ["$r$ (growth rate)", "$K$ (carrying capacity)", "$P_0$ (init. live)","$\sigma_L$"],
+           uni=["$r$ (growth rate)", "$K$ (carrying capacity)", "$P_0$ (init. live)"],
+           var_names_map = {"$r$ (growth rate)":'Growth Rate, r (/day)', "$K$ (carrying capacity)":"Carrying capacity, K (/ml)", "$P_0$ (init. live)":r'Initial density, $P_0$ (/ml)',"$\sigma_L$":"Standard Deviation, $\sigma_{LL}$"},
+           #var_names_map={'N0':r'Initial density, $P_0$ (/ml)','mum': 'Growth Rate, μ (/day)', 'sigma': 'Standard Deviation, σ'},
            fontname='Arial',
-           fontsize=12,
-           num_prior_samples=200,
-           #save_path='figures/vardi_logistic_growth_chains.png'
+           fontsize=15,
+           num_prior_samples=2000,
+           hspace=0.8,
+           wspace=0.3,
+           save_path='../figures/vardi_logistic_growth_chains.svg'
            )
 
         """ 
@@ -180,13 +185,14 @@ if __name__ == "__main__":
     if plot_posterior_pairs_flag:
         plot_posterior_pairs(
         trace,
+        var_names_map = {"$r$ (growth rate)":'Growth Rate, r (/day)', "$K$ (carrying capacity)":"Carrying capacity, K (/ml)", "$P_0$ (init. live)":r'Initial density, $P_0$ (/ml)',"$\sigma_L$":"Standard Deviation, $\sigma_{LL}$"},
         plot_kind="kde",
         fontname="Arial",
-        fontsize=10,
-        figsize=(20, 10),
-        hspace=0.5,
-        wspace=0.2,
-        save_path='../figures/vardi_logistic_growth_posterior_corrected.png'
+        fontsize=15,
+        figsize=(10, 10),
+        hspace=0.3,
+        wspace=0.3,
+        save_path='../figures/vardi_logistic_growth_posterior_corrected.svg'
         )
     
         
@@ -195,13 +201,15 @@ if __name__ == "__main__":
         trace,
         thin=1,
         fontname="Arial",
+        var_order = ["$r$ (growth rate)", "$K$ (carrying capacity)", "$P_0$ (init. live)","$\sigma_L$"],
+        var_names_map = {"$r$ (growth rate)":'Growth Rate, r (/day)', "$K$ (carrying capacity)":"Carrying capacity, K (/ml)", "$P_0$ (init. live)":r'Initial density, $P_0$ (/ml)',"$\sigma_L$":"Standard Deviation, $\sigma_{LL}$"},
         fontsize=15,
         max_lag=80,
         show_geweke=False,
         hspace=0.8,
         combine_chains = False,
         figsize=(10, 10),
-        save_path="../figures/vardi_logistic_growth_convergence_corrected.png"
+        save_path="../figures/vardi_logistic_growth_convergence_corrected.svg"
         )
     
     
