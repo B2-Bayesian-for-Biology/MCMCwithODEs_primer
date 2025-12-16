@@ -17,6 +17,18 @@ However, fitting such models to experimental data requires a principled statisti
 
 ---
 
+## ⬇️ Download the full repository
+
+Get all notebooks, code, and examples in one click:
+
+<p align="center">
+  <a href="https://github.com/B2-Bayesian-for-Biology/MCMCwithODEs_primer">
+    <strong>📦 Download ZIP</strong>
+  </a>
+</p>
+
+---
+
 ## 📘 Overview
 
 This repository accompanies our upcoming paper:
@@ -27,9 +39,7 @@ This repository accompanies our upcoming paper:
 
 ---
 
-## 🚀 Quick start
-
-**Explore the case studies** from the sidebar:
+## 🚀 Case studies
 
 - **Python (PyMC)**
   - [Case Study 1 — Exponential Growth and Death](education/python/case_study_1.ipynb)
