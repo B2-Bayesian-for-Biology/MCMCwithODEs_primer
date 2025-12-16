@@ -130,7 +130,7 @@ if __name__ == "__main__":
     
     # Default to False if not defined
     run_inference_flag = False
-    plot_trace_flag = True
+    plot_trace_flag = False
     plot_convergence_flag = True
     plot_posterior_pairs_flag = True
     plot_dynamics_flag = False
@@ -208,7 +208,7 @@ if __name__ == "__main__":
         show_geweke=False,
         hspace=0.8,
         combine_chains = False,
-        figsize=(10, 10),
+        figsize=(12, 12),
         save_path="../figures/vardi_logistic_growth_convergence_corrected.svg"
         )
     

@@ -30,16 +30,16 @@ This repository accompanies our upcoming paper:
 ## 🚀 Quick start
 
 **Explore the case studies** from the sidebar:
-- **Python (PyMC)** → Case Study 1–3  
-- [Case Study 1 — Exponential Growth and Death](education/python/case_study_1.ipynb)
-- [Case Study 2 — Logistic Growth and Death](education/python/case_study_2.ipynb)
-- [Case Study 3 — Monod Growth and Death](education/python/case_study_3.ipynb)
 
-- **Julia (Turing.jl)** → Case Study 1–3
-- [Case Study 1 — Exponential Growth and Death](education/julia/case_study_1.ipynb)
-- [Case Study 2 — Logistic Growth and Death](education/julia/case_study_2.ipynb)
-- [Case Study 3 — Monod Growth and Death](education/julia/case_study_3.ipynb)
+- **Python (PyMC)**
+  - [Case Study 1 — Exponential Growth and Death](education/python/case_study_1.ipynb)
+  - [Case Study 2 — Logistic Growth and Death](education/python/case_study_2.ipynb)
+  - [Case Study 3 — Monod Growth and Death](education/python/case_study_3.ipynb)
 
+- **Julia (Turing.jl)**
+  - [Case Study 1 — Exponential Growth and Death](education/julia/case_study_1.ipynb)
+  - [Case Study 2 — Logistic Growth and Death](education/julia/case_study_2.ipynb)
+  - [Case Study 3 — Monod Growth and Death](education/julia/case_study_3.ipynb)
 ---
 
 ## 🧰 Stack
