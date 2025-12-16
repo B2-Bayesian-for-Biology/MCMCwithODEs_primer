@@ -77,10 +77,12 @@ Note: The notebooks were tested with the package versions listed in python_requi
 jupyter notebook
 ```
 ### 5️⃣ Open and run a case study
+Navigate to:
 ```text
 docs/education/python/case_study_2.ipynb
 ```
-
+and run the notebook top to bottom. This notebook demonstrates Bayesian inference of microbial growth and death
+rates from population time-series data using PyMC and a Logistic growth model.
 
 ## 🧩 Example: Bayesian Inference Workflow
 
