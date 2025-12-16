@@ -36,7 +36,7 @@ The repository contains:
 ---
 
 
-## ▶️ Try it yourself (Google Colab)
+## ▶️ Try it yourself (Google Colab) : Under development 
 
 Run the first Python case study directly in your browser — no local setup required.
 
