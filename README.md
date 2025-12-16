@@ -49,6 +49,39 @@ to the Python path so that shared utilities in `utils/` are available.
 
 --- 
 
+## 🧪 Run the notebooks locally
+
+This repository is a research and educational codebase (not a packaged Python library).  
+To run the example notebooks, please follow the steps below.
+
+### 1️⃣ Clone the repository
+```bash
+git clone https://github.com/B2-Bayesian-for-Biology/MCMCwithODEs_primer.git
+cd MCMCwithODEs_primer
+```
+### 2️⃣ Create and activate a Python environment
+```python
+python -m venv venv
+source venv/bin/activate        # macOS / Linux
+# venv\Scripts\activate         # Windows
+```
+### 3️⃣ Install dependencies
+```bash
+pip install --upgrade pip
+pip install -r python_requirements.txt
+```
+Note: The notebooks were tested with the package versions listed in python_requirements.txt. Other versions may work but are not guaranteed.
+
+### 4️⃣ Launch Jupyter Notebook
+```bash
+jupyter notebook
+```
+### 5️⃣ Open and run a case study
+```text
+docs/education/python/case_study_2.ipynb
+```
+
+
 ## 🧩 Example: Bayesian Inference Workflow
 
 Below is an example visualization from the primer, illustrating Bayesian inference applied to microbial population dynamics:
@@ -115,13 +148,6 @@ Population growth over time under logistic dynamics:
 - **Cross-platform reproducibility:** Equivalent inference workflows in both Python and Julia  
 
 ---
-
-
-### Examples
-```bash
-pip install pymc arviz numpy scipy matplotlib
-jupyter notebook education/python/case_study_1.ipynb
-```
 
 ### Citation
 
