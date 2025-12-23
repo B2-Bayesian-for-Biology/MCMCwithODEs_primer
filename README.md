@@ -1,6 +1,7 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17792668.svg)](https://doi.org/10.5281/zenodo.17792668)
+![License](https://img.shields.io/github/license/B2-Bayesian-for-Biology/MCMCwithODEs_primer)
 
-# 🧬 MCMCwithODEs_primer  
+# 🧬 Baysian Inference for Biological ODEs 
 ### **Bayesian Learning of Microbial Traits from Population Time Series Data: A Primer**
 
 Mathematical models are increasingly used to infer traits, interactions, and functional dynamics of microbial systems. The inference process typically begins with the development of a rate-based **Ordinary Differential Equation (ODE)** model.  
@@ -16,6 +17,14 @@ This **primer** introduces **Bayesian inference of ecological ODE models** for m
 
 Through this project, we connect **theory, code, and data** using a unified Bayesian framework implemented in both **Python** (via [PyMC](https://www.pymc.io)) and **Julia** (via [Turing.jl](https://turinglang.org)).  
 We hope this resource helps bring the utility of **Bayesian learning** to the broader **microbial ecology** and **quantitative biology** communities.
+
+---
+
+### Citation
+
+Paper citation will be added after it is published. If you use this repository, please cite:
+
+> Dey, S. et al. *MCMC with ODEs Primer*. Zenodo. https://doi.org/10.5281/zenodo.17792668
 
 ---
 
@@ -158,9 +167,6 @@ Population growth over time under logistic dynamics:
 
 ---
 
-### Citation
-
-To be added.
 
 
 
