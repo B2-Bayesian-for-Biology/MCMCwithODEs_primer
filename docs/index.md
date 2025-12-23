@@ -34,7 +34,7 @@ Get all notebooks, code, and examples in one click:
 This repository accompanies our upcoming paper:
 
 > **“Bayesian Learning of Microbial Traits from Population Time Series Data: A Primer”**  
-> *Authors:* Raunak Dey$,Robert Beach, Kennedi M. Hambrick, Ioannis Sgouralis, Paul Fr\'emont, David Demory, Eric Carr, Stephen J. Beckett, Joshua S. Weitz, David Talmy
+> *Authors:* Raunak Dey,Robert Beach, Kennedi M. Hambrick, Ioannis Sgouralis, Paul Fremont, David Demory, Eric Carr, Stephen J. Beckett, Joshua S. Weitz, David Talmy
 > *(Link will be posted here when the paper is online.)*
 
 ---
@@ -43,16 +43,20 @@ This repository accompanies our upcoming paper:
 
 ### 🐍 Python (PyMC)
 
+## 🚀 Case studies
+
+### 🐍 Python (PyMC)
+
 - **Case Study 1 — Exponential Growth and Death**  
-  📄 [View notebook](education/python/case_study_1.ipynb)  
+  📄 [View notebook on GitHub](https://github.com/B2-Bayesian-for-Biology/MCMCwithODEs_primer/blob/main/education/python/case_study_1.ipynb)  
   🚀 [Run in Colab](https://colab.research.google.com/github/B2-Bayesian-for-Biology/MCMCwithODEs_primer/blob/main/Colab/python/case_study_1.ipynb)
 
 - **Case Study 2 — Logistic Growth and Death**  
-  📄 [View notebook](education/python/case_study_2.ipynb)  
+  📄 [View notebook on GitHub](https://github.com/B2-Bayesian-for-Biology/MCMCwithODEs_primer/blob/main/education/python/case_study_2.ipynb)  
   🚀 [Run in Colab](https://colab.research.google.com/github/B2-Bayesian-for-Biology/MCMCwithODEs_primer/blob/main/Colab/python/case_study_2.ipynb)
 
 - **Case Study 3 — Monod Growth and Death**  
-  📄 [View notebook](education/python/case_study_3.ipynb)  
+  📄 [View notebook on GitHub](https://github.com/B2-Bayesian-for-Biology/MCMCwithODEs_primer/blob/main/education/python/case_study_3.ipynb)  
   🚀 [Run in Colab](https://colab.research.google.com/github/B2-Bayesian-for-Biology/MCMCwithODEs_primer/blob/main/Colab/python/case_study_3.ipynb)
 
 - **Julia (Turing.jl)**
