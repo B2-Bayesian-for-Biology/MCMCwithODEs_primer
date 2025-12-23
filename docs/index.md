@@ -41,10 +41,19 @@ This repository accompanies our upcoming paper:
 
 ## 🚀 Case studies
 
-- **Python (PyMC)**
-  - [Case Study 1 — Exponential Growth and Death](education/python/case_study_1.ipynb)
-  - [Case Study 2 — Logistic Growth and Death](education/python/case_study_2.ipynb)
-  - [Case Study 3 — Monod Growth and Death](education/python/case_study_3.ipynb)
+### 🐍 Python (PyMC)
+
+- **Case Study 1 — Exponential Growth and Death**  
+  📄 [View notebook](education/python/case_study_1.ipynb)  
+  🚀 [Run in Colab](https://colab.research.google.com/github/B2-Bayesian-for-Biology/MCMCwithODEs_primer/blob/main/Colab/python/case_study_1.ipynb)
+
+- **Case Study 2 — Logistic Growth and Death**  
+  📄 [View notebook](education/python/case_study_2.ipynb)  
+  🚀 [Run in Colab](https://colab.research.google.com/github/B2-Bayesian-for-Biology/MCMCwithODEs_primer/blob/main/Colab/python/case_study_2.ipynb)
+
+- **Case Study 3 — Monod Growth and Death**  
+  📄 [View notebook](education/python/case_study_3.ipynb)  
+  🚀 [Run in Colab](https://colab.research.google.com/github/B2-Bayesian-for-Biology/MCMCwithODEs_primer/blob/main/Colab/python/case_study_3.ipynb)
 
 - **Julia (Turing.jl)**
   - [Case Study 1 — Exponential Growth and Death](education/julia/case_study_1.ipynb)
