@@ -41,21 +41,21 @@ This repository accompanies our upcoming paper:
 
 ## 🚀 Case studies
 
-### 🐍 Python (PyMC)
+### Python (PyMC) 
 
 You can view the solved examples (case studies) or try running it yourself via Google Colab.
 
 - **Case Study 1 — Exponential Growth and Death**  
   📄 [View notebook on GitHub](education/python/case_study_1.ipynb)  
-  🚀 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/B2-Bayesian-for-Biology/MCMCwithODEs_primer/blob/main/Colab/python/case_study_1.ipynb)
+  🧑‍💻 Try it yourself: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/B2-Bayesian-for-Biology/MCMCwithODEs_primer/blob/main/Colab/python/case_study_1.ipynb)
 
 - **Case Study 2 — Logistic Growth and Death**  
   📄 [View notebook on GitHub](education/python/case_study_2.ipynb)  
-  🚀 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/B2-Bayesian-for-Biology/MCMCwithODEs_primer/blob/main/Colab/python/case_study_2.ipynb)
+  🧑‍💻 Try it yourself: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/B2-Bayesian-for-Biology/MCMCwithODEs_primer/blob/main/Colab/python/case_study_2.ipynb)
 
 - **Case Study 3 — Monod Growth and Death**  
   📄 [View notebook on GitHub](education/python/case_study_3.ipynb)  
-  🚀 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/B2-Bayesian-for-Biology/MCMCwithODEs_primer/blob/main/Colab/python/case_study_3.ipynb)
+  🧑‍💻 Try it yourself: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/B2-Bayesian-for-Biology/MCMCwithODEs_primer/blob/main/Colab/python/case_study_3.ipynb)
 
 ### Julia (Turing.jl)
 
