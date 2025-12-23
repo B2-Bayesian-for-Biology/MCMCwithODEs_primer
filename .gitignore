@@ -4,3 +4,10 @@
 
 # legacy files
 /case_study_1/python/figures/legacy/*
+/case_study_1/python/src/legacy/*
+
+/case_study_2/python/figures/legacy/*
+/case_study_2/python/src/legacy/*
+
+/case_study_3/python/figures/legacy/*
+/case_study_3/python/src/legacy/*
