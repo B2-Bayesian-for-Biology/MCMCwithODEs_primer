@@ -1,3 +1,6 @@
 /figures/
 /figures_v2/
 /onestep_mcmc/  
+
+# legacy files
+/case_study_1/python/figures/legacy/*
