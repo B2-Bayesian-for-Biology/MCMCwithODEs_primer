@@ -34,7 +34,7 @@ Get all notebooks, code, and examples in one click:
 This repository accompanies our upcoming paper:
 
 > **“Bayesian Learning of Microbial Traits from Population Time Series Data: A Primer”**  
-> *Authors:* TBD  
+> *Authors:* Raunak Dey$,Robert Beach, Kennedi M. Hambrick, Ioannis Sgouralis, Paul Fr\'emont, David Demory, Eric Carr, Stephen J. Beckett, Joshua S. Weitz, David Talmy
 > *(Link will be posted here when the paper is online.)*
 
 ---

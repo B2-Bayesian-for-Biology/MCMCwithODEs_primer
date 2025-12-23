@@ -41,8 +41,7 @@ The repository contains:
 Run the first Python case study directly in your browser — no local setup required.
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](
-https://colab.research.google.com/github/B2-Bayesian-for-Biology/MCMCwithODEs_primer/blob/main/docs/education/python/case_study_1.ipynb
-)
+https://colab.research.google.com/github/B2-Bayesian-for-Biology/MCMCwithODEs_primer/blob/main/Colab/python/case_study_1.ipynb)
 
 The Colab version automatically clones the repository and adds the project root
 to the Python path so that shared utilities in `utils/` are available.
