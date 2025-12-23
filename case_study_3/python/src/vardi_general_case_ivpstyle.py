@@ -126,8 +126,9 @@ def build_pymc_model(times, total_obs, dead_obs):
         Qn = pm.Uniform("Qn", 1e-10, 7e-10)
         delta = pm.Uniform("delta", 0.01, 0.09)
 
-        N0 = pm.Uniform("N0", 500, 2000)
+        #N0 = pm.Uniform("N0", 500, 2000)
         N0 = pm.Deterministic("N0", 1000 + ((500 / 1.8e-10) * (Qn - 3.2e-10)))
+
         P0 = pm.LogNormal("P0", mu=12.2175, sigma=0.1)
         D0 = pm.LogNormal("D0", mu=10.2804, sigma=0.1)
 
