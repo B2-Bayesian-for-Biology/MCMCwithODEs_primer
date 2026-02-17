@@ -24,7 +24,8 @@ We hope this resource helps bring the utility of **Bayesian learning** to the br
 
 Paper citation will be added after it is published. If you use this repository, please cite:
 
-> Dey, R. et al. *MCMC with ODEs Primer*. Zenodo. https://doi.org/10.5281/zenodo.17792668
+> Dey, R. et al. *Microbial Primer: Bayesian learning of microbial traits from population time series data*. Zenodo. https://doi.org/10.5281/zenodo.17792668
+
 
 ---
 
