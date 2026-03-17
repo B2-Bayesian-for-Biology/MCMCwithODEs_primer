@@ -34,7 +34,7 @@ Get all notebooks, code, and examples in one click:
 This repository accompanies our upcoming paper:
 
 > **“Bayesian Learning of Microbial Traits from Population Time Series Data: A Primer”**  
-> *Authors:* Raunak Dey,Robert Beach, Kennedi M. Hambrick, Ioannis Sgouralis, Paul Fremont, David Demory, Eric Carr, Stephen J. Beckett, Joshua S. Weitz, David Talmy
+> *Authors:* Raunak Dey, Robert Beach, Kennedi M. Hambrick, Ioannis Sgouralis, Paul Fremont, David Demory, Eric Carr, Stephen J. Beckett, Joshua S. Weitz, David Talmy
 > *(Link will be posted here when the paper is online.)*
 
 ---
@@ -69,6 +69,23 @@ You can view the solved examples (case studies) or try running it yourself via G
 - **Python · [PyMC](https://www.pymc.io/)** — Probabilistic programming in Python for Bayesian modeling and inference  
 - **Julia · [Turing.jl](https://turinglang.org/)** — A flexible probabilistic programming language in Julia  
 
+All analyses were performed using:
+
+**Python**
+- Python 3.12  
+- PyMC 5.25.1  
+- PyTensor 2.31.7  
+- ArviZ 0.22.0  
+- NumPy 2.2.5  
+- SciPy 1.16.2  
+
+**Julia**
+- Julia 1.11.0  
+- Turing.jl 0.40.2  
+- DifferentialEquations.jl 7.16.1  
+- SciMLSensitivity.jl 7.90.0  
+- Distributions.jl 0.25.120  
+- MCMCChains.jl 7.2.0  
 
 ---
 
