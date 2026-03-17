@@ -21,7 +21,7 @@ This primer was developed through a collaborative effort across multiple researc
 **Paul Frémont** —  University of Maryland 
 🔗 [Website](https://www.paulfremont.com)
 
-**David Demory** — Sorbone University 
+**David Demory** — Sorbonne Université 
 🔗 [Website](https://usr3579.obs-banyuls.fr/fr/axe-genophy/membres-permanents/daviddemory.html)
 
 
