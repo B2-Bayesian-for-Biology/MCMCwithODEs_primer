@@ -22,7 +22,7 @@ However, fitting such models to experimental data requires a principled statisti
 Get all notebooks, code, and examples in one click:
 
 <p align="center">
-  <a href="https://github.com/B2-Bayesian-for-Biology/MCMCwithODEs_primer">
+  <a href= "https://github.com/B2-Bayesian-for-Biology/MCMCwithODEs_primer/archive/refs/heads/main.zip">
     <strong>📦 Download ZIP</strong>
   </a>
 </p>
