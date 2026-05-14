@@ -1,15 +1,23 @@
 
+
 # ============================================================
-# FIGURE LAYOUT (4 x 2)
+# FIGURE LAYOUT (2 x 4)
 # ============================================================
+
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
 import arviz as az
 import pymc as pm
 from matplotlib.patches import Patch
 from matplotlib.lines import Line2D
+
+# ------------------------------------------------------------
+# Colors
+# ------------------------------------------------------------
+
+hist_color = "C3"       # reddish histogram
+mu_color = "#b22222"    # slightly darker/redder than C3
 
 # ============================================================
 # SETTINGS
@@ -17,19 +25,39 @@ from matplotlib.lines import Line2D
 
 DATA_DIR = "./../data"
 
-# Must match the values used during inference
+# Must match values used during inference
 prior_mean_values = [0.05, 0.10, 0.15, 0.20, 0.30, 0.40, 0.50]
 
 # Fixed prior width used during inference
 SIGMA_DELTA = 0.1
+
+increase = 6
+
+# ------------------------------------------------------------
+# Typography
+# ------------------------------------------------------------
+plt.rcParams.update({
+    "font.size": 16 + increase,
+    "axes.titlesize": 18 + increase,
+    "axes.labelsize": 17 + increase,
+    "xtick.labelsize": 14 + increase,
+    "ytick.labelsize": 14 + increase,
+    "legend.fontsize": 14 + increase,
+})
 
 # ============================================================
 # LOAD TRACES
 # ============================================================
 
 traces = {}
-posterior_means = []
-posterior_stds = []
+
+posterior_mu_means = []
+posterior_mu_stds = []
+
+posterior_delta_means = []
+posterior_delta_stds = []
+
+mu_minus_delta_means = []
 
 print("\nLoading traces...\n")
 
@@ -41,35 +69,57 @@ for pmd in prior_mean_values:
     )
 
     if not os.path.exists(fname):
-        raise FileNotFoundError(f"Missing file:\n{fname}")
+        raise FileNotFoundError(
+            f"Missing file:\n{fname}"
+        )
 
     trace = az.from_netcdf(fname)
     traces[pmd] = trace
 
+    # --------------------------------------------------------
+    # Posterior of mu
+    # --------------------------------------------------------
     mum_post = trace.posterior["mum"].values.flatten()
 
     mu_mean = float(np.mean(mum_post))
     mu_std = float(np.std(mum_post))
 
-    posterior_means.append(mu_mean)
-    posterior_stds.append(mu_std)
+    posterior_mu_means.append(mu_mean)
+    posterior_mu_stds.append(mu_std)
+
+    # --------------------------------------------------------
+    # Posterior of delta
+    # Change variable name if needed
+    # --------------------------------------------------------
+    delta_post = trace.posterior["delta"].values.flatten()
+
+    delta_mean = float(np.mean(delta_post))
+    delta_std = float(np.std(delta_post))
+
+    posterior_delta_means.append(delta_mean)
+    posterior_delta_stds.append(delta_std)
+
+    # --------------------------------------------------------
+    # Mean(mu - delta)
+    # --------------------------------------------------------
+    mu_minus_delta = np.mean(
+        mum_post - delta_post
+    )
+
+    mu_minus_delta_means.append(
+        float(mu_minus_delta)
+    )
 
     print(
         f"δ prior mean = {pmd:.2f} | "
-        f"μ posterior mean = {mu_mean:.4f} | "
-        f"std = {mu_std:.4f}"
+        f"μ mean = {mu_mean:.4f} | "
+        f"δ mean = {delta_mean:.4f} | "
+        f"μ−δ = {mu_minus_delta:.4f}"
     )
 
-increase = 6
-# ---- typography -----------------------------------------------------------
-plt.rcParams.update({
-    "font.size": 16+increase,
-    "axes.titlesize": 18+increase,
-    "axes.labelsize": 17+increase,
-    "xtick.labelsize": 14+increase,
-    "ytick.labelsize": 14+increase,
-    "legend.fontsize": 14+increase,
-})
+# ============================================================
+# FIGURE
+# ============================================================
 
 fig, axes = plt.subplots(
     2,
@@ -80,23 +130,21 @@ fig, axes = plt.subplots(
 
 axes = axes.flatten()
 
-# colour map
-colours = plt.cm.coolwarm(
-    np.linspace(0.1, 0.9, len(prior_mean_values))
-)
-
 # ============================================================
 # TOP 7 PANELS: HISTOGRAMS
 # ============================================================
 
-for idx, (pmd, colour) in enumerate(
-    zip(prior_mean_values, colours)
-):
+for idx, pmd in enumerate(prior_mean_values):
 
     ax = axes[idx]
 
     trace = traces[pmd]
-    mum_post = trace.posterior["mum"].values.flatten()
+
+    mum_post = (
+        trace.posterior["mum"]
+        .values
+        .flatten()
+    )
 
     # --------------------------------------------------------
     # Posterior histogram of μ
@@ -106,15 +154,21 @@ for idx, (pmd, colour) in enumerate(
         bins=40,
         range=(0, 1.5),
         density=True,
-        color=colour,
-        alpha=0.75,
+        #color="lightgrey",
+        #alpha=0.9,
+        color=hist_color,
+        alpha=0.28,
         edgecolor="none"
     )
 
     # --------------------------------------------------------
     # Prior of δ
     # --------------------------------------------------------
-    x = np.linspace(0.01, 1.5, 400)
+    x = np.linspace(
+        0.01,
+        1.5,
+        400
+    )
 
     delta_dist = pm.TruncatedNormal.dist(
         mu=pmd,
@@ -124,7 +178,10 @@ for idx, (pmd, colour) in enumerate(
     )
 
     prior_pdf = np.exp(
-        pm.logp(delta_dist, x).eval()
+        pm.logp(
+            delta_dist,
+            x
+        ).eval()
     )
 
     ax.plot(
@@ -134,12 +191,41 @@ for idx, (pmd, colour) in enumerate(
         linewidth=3
     )
 
+
+    # --------------------------------------------------------
+    # Prior of μ
+    # --------------------------------------------------------
+
+    mu_dist = pm.TruncatedNormal.dist(
+        mu=0.5,
+        sigma=0.3,
+        lower=0.01,
+        upper=1.5
+    )
+
+    mu_prior_pdf = np.exp(
+        pm.logp(
+            mu_dist,
+            x
+        ).eval()
+    )
+
+    ax.plot(
+        x,
+        mu_prior_pdf,
+        color=mu_color,
+        linewidth=3,
+        alpha=0.9
+    )
+
+
     # --------------------------------------------------------
     # Posterior mean line
     # --------------------------------------------------------
     ax.axvline(
-        posterior_means[idx],
-        color=colour,
+        posterior_mu_means[idx],
+        #color="dimgray",
+        color=mu_color,
         linewidth=3,
         linestyle="--",
         alpha=0.95
@@ -153,20 +239,21 @@ for idx, (pmd, colour) in enumerate(
         pad=10
     )
 
-    ax.set_xlabel(r"$\mu$ and $\delta$ (/day)")
+    ax.set_xlabel(
+        r"$\mu$ and $\delta$ (/day)"
+    )
 
     if idx % 2 == 0:
         ax.set_ylabel("PDF")
 
     ax.set_xlim(0, 1.5)
-    # Make histogram panel square
 
+    # Square panel
     ax.set_box_aspect(1)
 
 # ============================================================
-# LEGEND (GLOBAL)
+# GLOBAL LEGEND
 # ============================================================
-
 legend_handles = [
 
     Line2D(
@@ -176,15 +263,22 @@ legend_handles = [
         label=r"Prior of $\delta$"
     ),
 
+    Line2D(
+        [0], [0],
+        color=mu_color,
+        linewidth=3,
+        label=r"Prior of $\mu$"
+    ),
+
     Patch(
-        facecolor="grey",
-        alpha=0.6,
+        facecolor=hist_color,
+        alpha=0.28,
         label=r"Posterior of $\mu$"
     ),
 
     Line2D(
         [0], [0],
-        color="grey",
+        color=mu_color,
         linewidth=3,
         linestyle="--",
         label=r"Posterior mean of $\mu$"
@@ -194,30 +288,45 @@ legend_handles = [
 fig.legend(
     handles=legend_handles,
     loc="upper center",
-    bbox_to_anchor=(0.5, 0.0),
-    ncol=3,
-    frameon=True
+    bbox_to_anchor=(0.4, 0.1),
+    ncol=4,
+    frameon=False
 )
 
 # ============================================================
-# LAST PANEL:
-# BIAS IN μ
+# LAST PANEL
 # ============================================================
 
 ax_mean = axes[-1]
 
-ax_mean.scatter(
+# ------------------------------------------------------------
+# μ posterior mean
+# ------------------------------------------------------------
+ax_mean.plot(
     prior_mean_values,
-    posterior_means,
-    color=colours,
-    s=120,
-    edgecolor="k",
-    linewidth=1.2,
+    posterior_mu_means,
+    "o",
+    color=mu_color,
+    markersize=9,
+    label=r"Mean of Posterior of $\mu$",
     zorder=3
 )
 
 # ------------------------------------------------------------
-# slope-1 line
+# μ − δ posterior mean
+# ------------------------------------------------------------
+ax_mean.plot(
+    prior_mean_values,
+    mu_minus_delta_means,
+    "s",
+    color="grey",
+    markersize=8,
+    label=r"Mean of Posterior of $\mu-\delta$",
+    zorder=3
+)
+
+# ------------------------------------------------------------
+# SLOPE-1 REFERENCE LINE
 # ------------------------------------------------------------
 
 xline = np.array([
@@ -225,8 +334,9 @@ xline = np.array([
     max(prior_mean_values)
 ])
 
+# approximate constant offset
 net_rate_approx = (
-    posterior_means[0]
+    posterior_mu_means[0]
     - prior_mean_values[0]
 )
 
@@ -235,18 +345,41 @@ ax_mean.plot(
     xline + net_rate_approx,
     "k--",
     linewidth=2.5,
+    alpha=0.9,
     label="Slope-1 reference"
 )
 
 # ------------------------------------------------------------
-# square axes
+# Constant reference for μ − δ
+# ------------------------------------------------------------
+
+constant_ref = mu_minus_delta_means[0]
+
+ax_mean.axhline(
+    constant_ref,
+    color="grey",
+    linestyle=":",
+    linewidth=2.5,
+    alpha=0.9,
+    label=r"Constant $\mu-\delta$"
+)
+
+# ------------------------------------------------------------
+# Square axes with proper slope perception
 # ------------------------------------------------------------
 
 xmin = min(prior_mean_values) - 0.02
 xmax = max(prior_mean_values) + 0.02
 
-ymin = min(posterior_means) - 0.02
-ymax = max(posterior_means) + 0.02
+ymin = min(
+    min(posterior_mu_means),
+    min(mu_minus_delta_means)
+) - 0.02
+
+ymax = max(
+    max(posterior_mu_means),
+    max(mu_minus_delta_means)
+) + 0.02
 
 lim_min = min(
     xmin,
@@ -268,13 +401,66 @@ ax_mean.set_ylim(
     lim_max + net_rate_approx
 )
 
+# ------------------------------------------------------------
+# Add y-tick for constant μ−δ value
+# ------------------------------------------------------------
+
+# ------------------------------------------------------------
+# Add y-tick for constant μ−δ value
+# ------------------------------------------------------------
+
+current_yticks = np.array(
+    ax_mean.get_yticks()
+)
+
+# remove auto tick too close to constant_ref
+threshold = 0.03
+
+filtered_ticks = [
+    tick for tick in current_yticks
+    if abs(tick - constant_ref) > threshold
+]
+
+# add constant reference tick
+yticks_new = np.sort(
+    np.array(
+        filtered_ticks + [constant_ref]
+    )
+)
+
+ax_mean.set_yticks(
+    yticks_new
+)
+
+# custom labels
+yticklabels = []
+
+for tick in yticks_new:
+
+    if np.isclose(
+        tick,
+        constant_ref,
+        atol=1e-3
+    ):
+        yticklabels.append(
+            rf"{constant_ref:.2f}"
+        )
+    else:
+        yticklabels.append(
+            f"{tick:.1f}"
+        )
+
+ax_mean.set_yticklabels(
+    yticklabels
+)
+
 ax_mean.set_aspect(
     "equal",
     adjustable="box"
 )
 
 # ------------------------------------------------------------
-# labels
+# Labels
 # ------------------------------------------------------------
 
 ax_mean.set_xlabel(
@@ -282,26 +468,27 @@ ax_mean.set_xlabel(
 )
 
 ax_mean.set_ylabel(
-    r"Posterior mean of $\mu$ (/day)"
+    r"Posterior mean (/day)"
 )
 
-ax_mean.set_title(
-    r"Bias in $\mu$ from misspecified $\delta$ prior",
-    pad=12
-)
+
+#ax_mean.legend(
+#    loc="best",
+#    frameon=False
+#)
 
 ax_mean.legend(
-    loc="upper left",
-    frameon=True
+    loc="upper center",
+    bbox_to_anchor=(0.5, -0.28),
+    frameon=False,
+    ncol=1
 )
 
-# ============================================================
-# SUPTITLE
-# ============================================================
+
+# Make square
+ax_mean.set_box_aspect(1)
 
 
-
-# ============================================================
 # SAVE
 # ============================================================
 
@@ -326,337 +513,8 @@ plt.savefig(
     bbox_inches="tight"
 )
 
-plt.show()
+
 
 print("\nFigure saved:")
 print(save_svg)
 print(save_png)
-
-"""
-import os
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
-import arviz as az
-import pymc as pm
-
-# ============================================================
-# SETTINGS
-# ============================================================
-
-DATA_DIR = "./../data"
-
-# Must match the values used during inference
-prior_mean_values = [0.05, 0.10, 0.15, 0.20, 0.30, 0.40, 0.50]
-
-# Fixed prior width used during inference
-SIGMA_DELTA = 0.1
-
-# ============================================================
-# LOAD TRACES
-# ============================================================
-
-traces = {}
-posterior_means = []
-posterior_stds = []
-
-print("\nLoading traces...\n")
-
-for pmd in prior_mean_values:
-
-    fname = os.path.join(
-        DATA_DIR,
-        f"trace_mean_delta_{pmd}.nc"
-    )
-
-    if not os.path.exists(fname):
-        raise FileNotFoundError(f"Missing file:\n{fname}")
-
-    trace = az.from_netcdf(fname)
-    traces[pmd] = trace
-
-    mum_post = trace.posterior["mum"].values.flatten()
-
-    mu_mean = float(np.mean(mum_post))
-    mu_std = float(np.std(mum_post))
-
-    posterior_means.append(mu_mean)
-    posterior_stds.append(mu_std)
-
-    print(
-        f"δ prior mean = {pmd:.2f} | "
-        f"μ posterior mean = {mu_mean:.4f} | "
-        f"std = {mu_std:.4f}"
-    )
-
-# ============================================================
-# FIGURE LAYOUT
-# ============================================================
-
-n_panels = len(prior_mean_values)
-ncols = n_panels
-
-fig = plt.figure(figsize=(3.5 * ncols, 9))
-
-gs = gridspec.GridSpec(
-    2,
-    ncols,
-    figure=fig,
-    hspace=0.45,
-    wspace=0.35
-)
-
-# colour map
-colours = plt.cm.coolwarm(
-    np.linspace(0.1, 0.9, n_panels)
-)
-
-# ============================================================
-# TOP ROW: HISTOGRAMS
-# ============================================================
-
-for col_idx, (pmd, colour) in enumerate(
-    zip(prior_mean_values, colours)
-):
-
-    ax = fig.add_subplot(gs[0, col_idx])
-
-    trace = traces[pmd]
-    mum_post = trace.posterior["mum"].values.flatten()
-
-    # Posterior of μ
-    ax.hist(
-        mum_post,
-        bins=40,
-        range=(0, 1.5),
-        density=True,
-        color=colour,
-        alpha=0.75,
-        edgecolor="none"
-    )
-
-    # Prior of δ
-    x = np.linspace(0.01, 1.5, 400)
-
-    delta_dist = pm.TruncatedNormal.dist(
-        mu=pmd,
-        sigma=SIGMA_DELTA,
-        lower=0.01,
-        upper=1.5
-    )
-
-    prior_pdf = np.exp(
-        pm.logp(delta_dist, x).eval()
-    )
-
-    ax.plot(
-        x,
-        prior_pdf,
-        color="black",
-        linewidth=2,
-        label="Prior of δ"
-    )
-
-    # Posterior mean of μ
-    ax.axvline(
-        posterior_means[col_idx],
-        color=colour,
-        linewidth=2,
-        linestyle="--",
-        alpha=0.9
-    )
-
-    ax.set_title(
-        f"Prior mean of δ = {pmd}",
-        fontsize=12
-    )
-
-    ax.set_xlabel(
-        "μ and δ (/day)",
-        fontsize=11
-    )
-
-    if col_idx == 0:
-        ax.set_ylabel(
-            "PDF",
-            fontsize=11
-        )
-
-    ax.set_xlim(0, 1.5)
-    ax.tick_params(labelsize=10)
-
-# ============================================================
-# LEGEND
-# ============================================================
-
-from matplotlib.patches import Patch
-from matplotlib.lines import Line2D
-
-legend_handles = [
-    Line2D(
-        [0], [0],
-        color="black",
-        linewidth=2,
-        label="Prior of δ"
-    ),
-    Patch(
-        facecolor="grey",
-        alpha=0.6,
-        label="Posterior of μ"
-    ),
-    Line2D(
-        [0], [0],
-        color="grey",
-        linewidth=2,
-        linestyle="--",
-        label="Posterior mean of μ"
-    )
-    
-    
-]
-
-
-
-fig.legend(
-    handles=legend_handles,
-    loc="upper center",
-    bbox_to_anchor=(0.5, 0.50),
-    ncol=3,
-    fontsize=11,
-    frameon=True
-)
-
-
-# ============================================================
-# BOTTOM (CENTERED):
-# POSTERIOR MEAN OF μ
-# ============================================================
-
-ax_mean = fig.add_subplot(
-    gs[1, 1:-1]
-)
-
-ax_mean.scatter(
-    prior_mean_values,
-    posterior_means,
-    color=colours,
-    s=80,
-    zorder=3,
-    edgecolor="k"
-)
-
-# ------------------------------------------------------------
-# slope-1 reference line
-# ------------------------------------------------------------
-
-xline = np.array([
-    min(prior_mean_values),
-    max(prior_mean_values)
-])
-
-net_rate_approx = (
-    posterior_means[0]
-    - prior_mean_values[0]
-)
-
-ax_mean.plot(
-    xline,
-    xline + net_rate_approx,
-    "k--",
-    linewidth=1.5,
-    label=(
-       # f"Slope-1 ref\n"
-       # f"(net rate ≈ {net_rate_approx:.2f})"
-        f"Slope-1"
-    )
-)
-
-# ------------------------------------------------------------
-# FORCE SQUARE AXES + TRUE DIAGONAL
-# ------------------------------------------------------------
-
-# same limits for x and y so y=x+c is visually slope-1
-xmin = min(prior_mean_values) - 0.02
-xmax = max(prior_mean_values) + 0.02
-
-ymin = min(posterior_means) - 0.02
-ymax = max(posterior_means) + 0.02
-
-# make common limits
-lim_min = min(xmin, ymin - net_rate_approx)
-lim_max = max(xmax, ymax - net_rate_approx)
-
-ax_mean.set_xlim(lim_min, lim_max)
-ax_mean.set_ylim(
-    lim_min + net_rate_approx,
-    lim_max + net_rate_approx
-)
-
-# make the plotting area square
-ax_mean.set_aspect('equal', adjustable='box')
-
-# ------------------------------------------------------------
-# LABELS
-# ------------------------------------------------------------
-
-ax_mean.set_xlabel(
-    "Prior mean of δ (/day)",
-    fontsize=13
-)
-
-ax_mean.set_ylabel(
-    "Posterior mean of μ (/day)",
-    fontsize=13
-)
-
-ax_mean.set_title(
-    "Bias in μ from misspecified δ prior",
-    fontsize=13
-)
-
-ax_mean.legend(fontsize=11)
-ax_mean.tick_params(labelsize=11)
-
-
-
-# ============================================================
-# FINAL FORMATTING
-# ============================================================
-
-fig.suptitle(
-    "Effect of prior mean of δ on inferred μ ",
-    fontsize=14,
-    y=1.01
-)
-
-# ============================================================
-# SAVE
-# ============================================================
-
-save_svg = os.path.join(
-    DATA_DIR,
-    "identifiability_prior_mean_sweep_replot.svg"
-)
-
-save_png = os.path.join(
-    DATA_DIR,
-    "identifiability_prior_mean_sweep_replot.png"
-)
-
-plt.savefig(
-    save_svg,
-    bbox_inches="tight"
-)
-
-plt.savefig(
-    save_png,
-    dpi=150,
-    bbox_inches="tight"
-)
-
-plt.show()
-
-print("\nFigure saved:")
-print(save_svg)
-print(save_png)
-"""
