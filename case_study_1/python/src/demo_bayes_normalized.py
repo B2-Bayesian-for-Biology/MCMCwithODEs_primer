@@ -29,7 +29,7 @@ N0_fixed = obs[0]
 # Define prior and likelihood
 # -------------------------------
 prior_mu = 0.5
-prior_sigma = 0.3 #use 0.1
+prior_sigma = 0.1 #use 0.1
 prior_pdf = lambda x: norm.pdf(x, loc=prior_mu, scale=prior_sigma)
 
 sigma_obs = 0.2  # assumed measurement noise (log-scale)
@@ -90,7 +90,7 @@ plt.figure(figsize=(8,6))
 
 plt.plot(mum_grid, prior_vals, label="Prior", lw=2, color="black")
 plt.plot(mum_grid, likelihood_vals, label="Likelihood", lw=2)
-plt.plot(mum_grid, posterior_vals, label="Posterior (Analytical)", lw=2)
+#plt.plot(mum_grid, posterior_vals, label="Posterior (Analytical)", lw=2)
 
 # Plot MCMC posterior as histogram
 samples = trace.posterior["mum"].values.flatten()
@@ -108,5 +108,5 @@ plt.ylabel("Probability Density Function")
 plt.legend()
 plt.title("Prior, Likelihood, and Posterior")
 plt.tight_layout()
-plt.savefig("bayes_demo.png", dpi=300, bbox_inches="tight")
+#plt.savefig("bayes_demo2.png", dpi=300, bbox_inches="tight")
 plt.show()
