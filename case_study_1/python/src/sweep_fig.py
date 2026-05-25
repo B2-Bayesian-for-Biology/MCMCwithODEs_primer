@@ -346,7 +346,7 @@ ax_mean.plot(
     "k--",
     linewidth=2.5,
     alpha=0.9,
-    label="Slope-1 reference"
+    label="y=x+c reference"
 )
 
 # ------------------------------------------------------------
@@ -396,18 +396,22 @@ ax_mean.set_xlim(
     lim_max
 )
 
+#ax_mean.set_ylim(
+#    lim_min + net_rate_approx,
+#    lim_max + net_rate_approx
+#)
+
 ax_mean.set_ylim(
-    lim_min + net_rate_approx,
-    lim_max + net_rate_approx
+    0.1,
+    0.9
 )
 
+ax_mean.set_xlim(
+    -0.02, 0.6)
 # ------------------------------------------------------------
 # Add y-tick for constant μ−δ value
 # ------------------------------------------------------------
 
-# ------------------------------------------------------------
-# Add y-tick for constant μ−δ value
-# ------------------------------------------------------------
 
 current_yticks = np.array(
     ax_mean.get_yticks()
@@ -458,6 +462,7 @@ ax_mean.set_aspect(
     "equal",
     adjustable="box"
 )
+
 
 # ------------------------------------------------------------
 # Labels
