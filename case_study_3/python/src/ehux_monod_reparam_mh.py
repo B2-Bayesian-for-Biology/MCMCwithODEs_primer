@@ -22,7 +22,7 @@ import arviz as az
 from pytensor.compile.ops import as_op
 import logging
 import os
-from plotting import *
+#from plotting import *
 import sys
 import xarray as xr
 
@@ -216,10 +216,10 @@ if __name__ == "__main__":
 
     # Default to False if not defined
     run_inference_flag = False
-    plot_trace_flag = False
-    plot_convergence_flag = False
-    plot_posterior_pairs_flag = False
-    plot_dynamics_flag = True
+    plot_trace_flag = True
+    plot_convergence_flag = True
+    plot_posterior_pairs_flag = True
+    plot_dynamics_flag = False
 
 
     try:
@@ -248,8 +248,8 @@ if __name__ == "__main__":
         var_order=['mu_max','delta','N0','P0','D0','sigma_live','sigma_dead'],
         hspace=0.85,
         wspace=0.3,
-        var_names_map = {"mu_max":r'Maximum growth rate, $μ_{max}$ (/day)', "Ks":r"Half saturation constant mmol$/m^3$ ", "P0":r'Init. living cells, $P_0$ (cell/ml)',
-                         "D0":r'Init. dead cells, $D_0$ (cell/ml)',"N0":r'Init. nutrient concentration, $N_0$ (mmol$/m^3$)',"sigma_live":"Standard Deviation, $\sigma_{LL,1}$","sigma_dead":"Standard Deviation, $\sigma_{LL,2}$",
+        var_names_map = {"mu_max":r'Maximum growth rate, $μ_{max}$ (/day)', "Ks":r"Half saturation constant mmol N$/m^3$ ", "P0":r'Init. living cells, $P_0$ (cell/ml)',
+                         "D0":r'Init. dead cells, $D_0$ (cell/ml)',"N0":r'Init. nutrient concentration, $N_0$ (mmol N$/m^3$)',"sigma_live":"Standard Deviation, $\sigma_{LL,1}$","sigma_dead":"Standard Deviation, $\sigma_{LL,2}$",
                          "delta":"Death Rate, δ (/day)",'Qn': r'Nutrient Quota $Q_N$ (mmol N/cell)'},
         save_path='../figures/ehux_monod_trace_reparam_mh4.svg'
         )
@@ -262,8 +262,8 @@ if __name__ == "__main__":
         fontname="Arial",
         fontsize=12,
         figsize=(25, 25),
-        #var_names_map = {"mu_max":r'Maximum growth rate, $μ_{max}$ (/day)', "Ks":r"Half saturation constant mmol$/m^3$ ", "P0":r'Init. living cells, $P_0$ (cell/ml)',
-        #                 "D0":r'Init. dead cells, $D_0$ (cell/ml)',"N0":r'Init. nutrient concentration, $N_0$ (mmol$/m^3$)',"sigma_live":"Standard Deviation, $\sigma_{LL,1}$","sigma_dead":"Standard Deviation, $\sigma_{LL,2}$",
+        #var_names_map = {"mu_max":r'Maximum growth rate, $μ_{max}$ (/day)', "Ks":r"Half saturation constant mmol N$/m^3$ ", "P0":r'Init. living cells, $P_0$ (cell/ml)',
+        #                 "D0":r'Init. dead cells, $D_0$ (cell/ml)',"N0":r'Init. nutrient concentration, $N_0$ (mmol N$/m^3$)',"sigma_live":"Standard Deviation, $\sigma_{LL,1}$","sigma_dead":"Standard Deviation, $\sigma_{LL,2}$",
         #                 "delta":"Death Rate, δ (/day)",'Qn': r'Nutrient Quota $Q_N$ (mmol N/cell)'},
         var_names_map = {"mu_max":'', "Ks":'', "P0":'',
                         "D0":'',"sigma_live":'',"sigma_dead":'',
@@ -286,8 +286,8 @@ if __name__ == "__main__":
             hspace=0.8,
             thin = 50,
             combine_chains = False,
-            var_names_map = {"mu_max":r'Maximum growth rate, $μ_{max}$ (/day)', "Ks":r"Half saturation constant mmol$/m^3$ ", "P0":r'Init. living cells, $P_0$ (cell/ml)',
-                         "D0":r'Init. dead cells, $D_0$ (cell/ml)',"N0":r'Init. nutrient concentration, $N_0$ (mmol$/m^3$)',"sigma_live":"Standard Deviation, $\sigma_{LL,1}$","sigma_dead":"Standard Deviation, $\sigma_{LL,2}$",
+            var_names_map = {"mu_max":r'Maximum growth rate, $μ_{max}$ (/day)', "Ks":r"Half saturation constant mmol N$/m^3$ ", "P0":r'Init. living cells, $P_0$ (cell/ml)',
+                         "D0":r'Init. dead cells, $D_0$ (cell/ml)',"N0":r'Init. nutrient concentration, $N_0$ (mmol N$/m^3$)',"sigma_live":"Standard Deviation, $\sigma_{LL,1}$","sigma_dead":"Standard Deviation, $\sigma_{LL,2}$",
                          "delta":"Death Rate, δ (/day)",'Qn': r'Nutrient Quota $Q_N$ (mmol N/cell)'},
             var_order=['mu_max','delta','N0','P0','D0','sigma_live','sigma_dead'],
             figsize=(10, 10),
@@ -353,6 +353,76 @@ if __name__ == "__main__":
         colors = ["skyblue", "skyblue", "skyblue"]
         sol_keys = ["total", "dead"]
 
+
+
+        '''
+        
+        for i in range(n_samples):
+            idx = burn_in + i
+
+            mu_max = posterior["mu_max"].values.flatten()[idx]
+            Ks     = posterior["Ks"].values.flatten()[idx]
+            Qn     = posterior["Qn"].values.flatten()[idx]
+            delta  = posterior["delta"].values.flatten()[idx]
+            N0     = posterior["N0"].values.flatten()[idx]
+            P0     = posterior["P0"].values.flatten()[idx]
+            D0     = posterior["D0"].values.flatten()[idx]
+
+            theta = [mu_max, Ks, Qn, delta]
+            y0 = [N0, P0, D0]
+
+            try:
+                sol = solve_ivp(
+                    fun=lambda t, y: general_case(t, y, theta),
+                    t_span=(t_eval[0], t_eval[-1]),
+                    y0=y0,
+                    t_eval=t_eval,
+                    rtol=1e-6,
+                    atol=1e-6
+                )
+
+                if not sol.success:
+                    continue
+
+                sol_data = ode_solution2data(sol.y.T)
+
+                axes[0].plot(t_eval, sol_data["total"], color=colors[0], alpha=0.05)
+                axes[1].plot(t_eval, sol_data["dead"],  color=colors[1], alpha=0.05)
+                axes[2].plot(t_eval, sol.y[0],          color=colors[2], alpha=0.05)
+
+            except Exception as e:
+                print(f"[Sample {i}] ODE solve failed: {e}")
+                continue
+                
+            # Observed data overlays — now ON TOP
+            axes[0].scatter(
+                ehux_total_time,
+                ehux_total_density,
+                color="black",
+                s=20,
+                zorder=10
+            )
+            axes[1].scatter(
+                ehux_dead_time,
+                ehux_dead_density,
+                color="black",
+                s=20,
+                zorder=10
+            )
+            '''
+
+
+
+        N0_fixed = 880          # mmol N/m³
+        Qn_fixed = 3.5e-10#1.1e-10     # mmol N/cell
+        m3_per_mL = 1e6         # 1 m³ = 1e6 mL
+
+        # Conventional N estimate from observed total cells
+        # P in cells/mL → cells/m³ via * m3_per_mL, then * Qn gives mmol/m³ used
+        
+        N_conv_est = N0_fixed - ((ehux_total_density- ehux_dead_density) * m3_per_mL * Qn_fixed)
+        #N_conv_est = N0_fixed - ((ehux_total_density- ehux_dead_density) /Qn_fixed)
+
         for i in range(n_samples):
             idx = burn_in + i
 
@@ -390,21 +460,23 @@ if __name__ == "__main__":
                 print(f"[Sample {i}] ODE solve failed: {e}")
                 continue
 
-        # Observed data overlays — now ON TOP
-        axes[0].scatter(
+        # Observed data overlays
+        axes[0].scatter(ehux_total_time, ehux_total_density, color="black", s=20, zorder=10)
+        axes[1].scatter(ehux_dead_time,  ehux_dead_density,  color="black", s=20, zorder=10)
+
+        # Conventional N estimate — open circles on nutrient subplot
+        axes[2].scatter(
             ehux_total_time,
-            ehux_total_density,
-            color="black",
-            s=20,
-            zorder=10
+            N_conv_est,
+            facecolors="none",    # open circles
+            edgecolors="black",
+            s=30,
+            zorder=10,
+            label=r"$N_0 - P_{obs}Q_N$"
         )
-        axes[1].scatter(
-            ehux_dead_time,
-            ehux_dead_density,
-            color="black",
-            s=20,
-            zorder=10
-        )
+        axes[2].legend(fontsize=11)
+                
+        
 
         # Titles and formatting
         for i, ax in enumerate(axes):
@@ -419,7 +491,7 @@ if __name__ == "__main__":
         plt.tight_layout()
 
         # Save figure as SVG
-        plt.savefig("ehux_monod_reparam_mh4.svg", format="svg", bbox_inches="tight")
+        #plt.savefig("ehux_monod_reparam_mh4.svg", format="svg", bbox_inches="tight")
 
         plt.show()
 
